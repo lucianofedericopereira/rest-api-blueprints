@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
+import time
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 from app.api.deps import require_role
+from app.core.database import get_db
 from app.infrastructure.error_budget import error_budget
 from app.infrastructure.quality_score import QualityScoreCalculator
 
@@ -15,13 +19,20 @@ async def liveness():
 
 
 @router.get("/health/ready", tags=["health"])
-async def readiness():
+def readiness(db: Session = Depends(get_db)):
     """A.17: Readiness — can it serve traffic?"""
     checks: dict = {}
     overall = True
 
-    # Placeholder for DB check — normally injected via dependency
-    checks["database"] = {"status": "ok", "latency_ms": 0.5}
+    # A.17: Real DB liveness ping
+    try:
+        t0 = time.monotonic()
+        db.execute(text("SELECT 1"))
+        latency_ms = round((time.monotonic() - t0) * 1000, 2)
+        checks["database"] = {"status": "ok", "latency_ms": latency_ms}
+    except Exception as exc:
+        checks["database"] = {"status": "error", "detail": str(exc)}
+        overall = False
 
     status_code = status.HTTP_200_OK if overall else status.HTTP_503_SERVICE_UNAVAILABLE
     return JSONResponse(

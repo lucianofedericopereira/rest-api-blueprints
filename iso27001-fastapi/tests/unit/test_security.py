@@ -1,7 +1,7 @@
 """Unit tests for JWT security utilities."""
 import uuid
 import pytest
-from jose import jwt
+import jwt
 
 from app.config.security import (
     create_access_token,

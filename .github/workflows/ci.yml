@@ -36,6 +36,9 @@ jobs:
       - name: Security Audit (A.14)
         run: composer audit
 
+      - name: Static Analysis (A.14)
+        run: vendor/bin/phpstan analyse --no-progress
+
       - name: Run Tests
         run: php bin/phpunit
         env:
@@ -63,6 +66,9 @@ jobs:
 
       - name: Security Audit (A.14)
         run: composer audit
+
+      - name: Static Analysis (A.14)
+        run: vendor/bin/phpstan analyse --no-progress
 
       - name: Run Tests
         run: php artisan test
@@ -95,6 +101,9 @@ jobs:
 
       - name: Security Audit (A.14)
         run: pip-audit
+
+      - name: Static Analysis (A.14)
+        run: mypy app
 
       - name: Run Tests
         run: pytest

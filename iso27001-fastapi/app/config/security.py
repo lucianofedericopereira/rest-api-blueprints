@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from jose import jwt
+import jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from app.config.settings import settings
@@ -57,7 +57,7 @@ def create_token_pair(user_id: str, role: str, access_jti: str, refresh_jti: str
 def decode_token(token: str) -> TokenPayload:
     """
     Decodes and validates the JWT.
-    Raises jose.JWTError if invalid or expired.
+    Raises jwt.PyJWTError if invalid or expired.
     """
     payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     return TokenPayload(**payload)

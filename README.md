@@ -2,15 +2,15 @@
 
 Three production-grade reference implementations of a REST API demonstrating
 **ISO 27001** security controls with Domain-Driven Design, structured telemetry,
-and defensive security patterns in **PHP (Symfony 7 / Laravel 11)** and
+and defensive security patterns in **PHP (Symfony 7.2 / Laravel 12)** and
 **Python (FastAPI 0.111+)**.
 
 ## Project Structure
 
 ```
 iso27001-fastapi/    FastAPI (Python 3.11)
-iso27001-symfony/    Symfony 7 (PHP 8.2)
-iso27001-laravel/    Laravel 11 (PHP 8.2)
+iso27001-symfony/    Symfony 7.2 (PHP 8.2)
+iso27001-laravel/    Laravel 12 (PHP 8.2)
 ```
 
 ---
@@ -37,8 +37,8 @@ iso27001-laravel/    Laravel 11 (PHP 8.2)
 | A.14 | Static analysis — mypy strict (Python), PHPStan level 8 (PHP) | ✓ | ✓ | ✓ |
 | A.14 | No stack traces or internals exposed to clients | ✓ | ✓ | ✓ |
 | A.17 | Health checks — liveness, readiness, detailed (admin) | ✓ | ✓ | ✓ |
-| A.17 | Error Budget Tracker (99.9% SLA, 5xx budget deduction) | ✓ | — | — |
-| A.17 | Quality Score Calculator (risk-weighted: security 40%, integrity 20%, …) | ✓ | — | — |
+| A.17 | Error Budget Tracker (99.9% SLA, 5xx budget deduction) | ✓ | ✓ | ✓ |
+| A.17 | Quality Score Calculator (risk-weighted: security 40%, integrity 20%, …) | ✓ | ✓ | ✓ |
 
 ### Observability
 
@@ -71,12 +71,10 @@ production-complete:
 
 | Feature | Notes |
 |---------|-------|
-| **Error Budget Tracker — Symfony / Laravel** | Implemented in FastAPI (`infrastructure/error_budget.py`). PHP equivalent not yet written. |
-| **Quality Score Calculator — Symfony / Laravel** | Implemented in FastAPI (`infrastructure/quality_score.py`). PHP equivalent not yet written. |
 | **Prometheus metrics — Symfony / Laravel** | FastAPI exposes `/metrics`. PHP stacks have `MetricsCollector` stub but no exporter endpoint. |
 | **X-Ray SDK integration — Symfony / Laravel** | FastAPI reads and propagates the header. Full `aws-xray-sdk` segment tracing not wired in PHP. |
 | **CloudWatch metrics — requires live credentials** | All three `CloudWatchEmitter` classes are no-ops without `boto3` / `aws/aws-sdk-php` installed and AWS credentials present. |
-| **Real DB liveness in `/health/ready`** | DB ping is a placeholder in all three stacks. Wire an actual query for production. |
+| **Error Budget / Quality Score — in-process only (PHP)** | PHP-FPM workers are isolated processes. The `ErrorBudgetTracker` counters reset per request. Back with Redis or APCu for cross-process accuracy. |
 | **P95/P99 per-endpoint latency alerts** | Prometheus histogram is recorded; no SLO alert rule or dashboard is defined. |
 | **4xx vs 5xx error rate separation** | Error budget counts only 5xx. Separate rules for 4xx anomalies are not defined. |
 | **External dependency health (circuit breakers)** | Readiness check does not include downstream API state. |
@@ -102,7 +100,7 @@ make up                 # Start all Docker containers
 make down               # Stop all containers
 make logs               # View structured JSON logs
 
-make setup-python       # pip install -e .[dev]
+make setup-python       # pip install -e .[dev]  (includes mypy + pytest)
 make test-python        # pytest
 
 make setup-php          # composer install + generate JWT RSA keys
@@ -113,7 +111,10 @@ make setup-laravel      # composer install + artisan key:generate
 make migration-laravel  # Eloquent migrations
 make test-laravel       # php artisan test
 
+make db-reset           # Drop + recreate + migrate all databases
+
 make check-security     # composer audit (both PHP) + pip-audit (Python)
+make check-static       # PHPStan level 8 (both PHP) + mypy strict (Python)
 ```
 
 ---
@@ -155,7 +156,7 @@ fields timestamp, level, message, service, request_id
 | Annex | Title | Controls demonstrated |
 |-------|-------|-----------------------|
 | A.9 | Access Control | JWT, RBAC, rate limiting, brute-force protection |
-| A.10 | Cryptography | AES-256-GCM, bcrypt/Argon2, transport security headers |
+| A.10 | Cryptography | AES-256-GCM field encryption, bcrypt/Argon2 password hashing, transport security headers |
 | A.12 | Operations Security | Structured logging, audit trail, correlation IDs, log normalisation |
 | A.14 | Secure Development | Input validation, static analysis, secure error handling |
 | A.17 | Business Continuity | Health checks, error budget, rate limiting, availability SLA |

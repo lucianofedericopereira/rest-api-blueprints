@@ -9,7 +9,7 @@ dependencies = [
     "sqlalchemy>=2.0.25",
     "pydantic>=2.6.0",
     "pydantic-settings>=2.1.0",
-    "python-jose[cryptography]>=3.3.0",
+    "PyJWT>=2.8.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.9",
     "prometheus-client>=0.19.0",
@@ -21,4 +21,11 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "httpx>=0.26.0",
+    "mypy>=1.8.0",
+    "types-passlib>=1.7.0",
 ]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["tests/"]

@@ -1,13 +1,13 @@
 {
     "name": "luciano/iso27001-laravel",
-    "description": "ISO 27001 compliant REST API — Laravel 11 reference implementation",
+    "description": "ISO 27001 compliant REST API — Laravel 12 reference implementation",
     "type": "project",
     "license": "proprietary",
     "require": {
         "php": "^8.2",
         "ext-json": "*",
         "ext-openssl": "*",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9"
     },

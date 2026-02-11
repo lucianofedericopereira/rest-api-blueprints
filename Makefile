@@ -2,7 +2,7 @@
         setup-php setup-python setup-laravel \
         test-php test-python test-laravel \
         migration-php migration-laravel \
-        db-reset check-security clean
+        db-reset check-security check-static clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -66,10 +66,15 @@ db-reset: ## Reset all databases (Drop & Create & Migrate)
 
 # ── Security audits (A.14) ───────────────────────────────────────────────────
 
-check-security: ## Run security audits on all stacks
+check-security: ## Run security audits on all stacks (composer audit + pip-audit)
 	cd iso27001-symfony && composer audit
 	cd iso27001-laravel && composer audit
 	cd iso27001-fastapi && pip-audit
+
+check-static: ## Run static analysis on all stacks (PHPStan level 8 + mypy strict)
+	cd iso27001-symfony && vendor/bin/phpstan analyse --no-progress
+	cd iso27001-laravel && vendor/bin/phpstan analyse --no-progress
+	cd iso27001-fastapi && mypy app
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 

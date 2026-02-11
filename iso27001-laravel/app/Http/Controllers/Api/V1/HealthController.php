@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Infrastructure\Telemetry\ErrorBudgetTracker;
+use App\Infrastructure\Telemetry\QualityScoreCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -18,6 +20,11 @@ use Illuminate\Support\Facades\DB;
  */
 final class HealthController extends Controller
 {
+    public function __construct(
+        private readonly ErrorBudgetTracker $errorBudget,
+        private readonly QualityScoreCalculator $qualityScore,
+    ) {}
+
     /** GET /health — liveness: is the process running? */
     public function liveness(): JsonResponse
     {
@@ -73,15 +80,20 @@ final class HealthController extends Controller
     /** GET /health/detailed — detailed diagnostics (admin only) */
     public function detailed(): JsonResponse
     {
+        $snapshot     = $this->errorBudget->snapshot();
+        $qualityScore = $this->qualityScore->calculate($snapshot);
+
         return response()->json([
-            'status'         => 'ok',
-            'version'        => config('app.version', 'unknown'),
-            'environment'    => config('app.env'),
-            'php_version'    => PHP_VERSION,
+            'status'          => 'ok',
+            'version'         => config('app.version', 'unknown'),
+            'environment'     => config('app.env'),
+            'php_version'     => PHP_VERSION,
             'laravel_version' => app()->version(),
-            'memory_peak_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
-            'db_connections' => DB::getConnections(),
-            'timestamp'      => now()->toIso8601String(),
+            'memory_peak_mb'  => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+            'db_connections'  => DB::getConnections(),
+            'timestamp'       => now()->toIso8601String(),
+            'error_budget'    => $snapshot,
+            'quality_score'   => $qualityScore,
         ]);
     }
 }
