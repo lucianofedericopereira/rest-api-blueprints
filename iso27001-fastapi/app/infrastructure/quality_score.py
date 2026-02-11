@@ -24,6 +24,38 @@ PRODUCTION_GATE = 0.70   # minimum acceptable score
 
 
 @dataclass(frozen=True)
+class SloAlert:
+    """
+    A.17: SLO breach signals for alerting pipelines.
+
+    Fields are set to True when the corresponding SLO threshold is exceeded.
+    All four signals are independent — any True value should trigger an alert.
+    """
+    p95_latency_breached: bool   # observed P95 > SLO_P95_LATENCY_MS
+    p99_latency_breached: bool   # observed P99 > SLO_P99_LATENCY_MS
+    error_rate_breached: bool    # 5xx error rate > SLO_ERROR_RATE_PCT
+    client_error_spike: bool     # 4xx rate > CLIENT_ERROR_SPIKE_PCT (abuse signal)
+
+    def any_breach(self) -> bool:
+        """True if at least one SLO is currently violated."""
+        return (
+            self.p95_latency_breached
+            or self.p99_latency_breached
+            or self.error_rate_breached
+            or self.client_error_spike
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "any_breach": self.any_breach(),
+            "p95_latency_breached": self.p95_latency_breached,
+            "p99_latency_breached": self.p99_latency_breached,
+            "error_rate_breached": self.error_rate_breached,
+            "client_error_spike": self.client_error_spike,
+        }
+
+
+@dataclass(frozen=True)
 class QualityScore:
     security: float          # 0–1  (JWT validity, RBAC enforcement, encryption)
     data_integrity: float    # 0–1  (audit log completeness, event dispatch success)
@@ -66,25 +98,34 @@ class QualityScore:
 
 class QualityScoreCalculator:
     """
-    Assembles a QualityScore from live runtime signals.
+    Assembles a QualityScore and SloAlert from live runtime signals.
 
     Inject the dependencies it needs (error budget, latency histogram, etc.)
     rather than reaching for global state directly — makes it unit-testable.
     """
+
+    # A.17: SLO thresholds — defined once, referenced everywhere.
+    SLO_P95_LATENCY_MS: float = 200.0    # alert if P95 exceeds 200 ms
+    SLO_P99_LATENCY_MS: float = 500.0    # alert if P99 exceeds 500 ms
+    SLO_ERROR_RATE_PCT: float = 0.1      # alert if 5xx rate (%) exceeds 0.1% (= 99.9% SLA)
+    CLIENT_ERROR_SPIKE_PCT: float = 5.0  # alert if 4xx rate (%) exceeds 5% (abuse signal)
 
     def __init__(
         self,
         *,
         sla_latency_p95_ms: float = 200.0,
         target_latency_ms: float = 500.0,
+        sla_latency_p99_ms: float = 0.0,
     ) -> None:
         """
         Args:
             sla_latency_p95_ms: Observed P95 latency in milliseconds (from metrics).
-            target_latency_ms: Acceptable P95 latency ceiling from SLA.
+            target_latency_ms:  Acceptable P95 latency ceiling from SLA.
+            sla_latency_p99_ms: Observed P99 latency in milliseconds (from metrics).
         """
         self._sla_latency_p95_ms = sla_latency_p95_ms
         self._target_latency_ms = target_latency_ms
+        self._sla_latency_p99_ms = sla_latency_p99_ms
 
     def calculate(
         self,
@@ -114,6 +155,29 @@ class QualityScoreCalculator:
             reliability=reliability,
             auditability=auditability,
             performance=performance,
+        )
+
+    def slo_alert(
+        self,
+        *,
+        failed_requests: int = 0,
+        client_errors: int = 0,
+        total_requests: int = 0,
+    ) -> SloAlert:
+        """
+        A.17: Evaluate SLO breach conditions.
+
+        Returns an SloAlert whose fields indicate which thresholds are violated.
+        Wire this into your alerting pipeline: any_breach() == True → fire alert.
+        """
+        error_rate_pct = (failed_requests / total_requests * 100.0) if total_requests > 0 else 0.0
+        client_error_pct = (client_errors / total_requests * 100.0) if total_requests > 0 else 0.0
+
+        return SloAlert(
+            p95_latency_breached=self._sla_latency_p95_ms > self.SLO_P95_LATENCY_MS,
+            p99_latency_breached=self._sla_latency_p99_ms > self.SLO_P99_LATENCY_MS,
+            error_rate_breached=error_rate_pct > self.SLO_ERROR_RATE_PCT,
+            client_error_spike=client_error_pct > self.CLIENT_ERROR_SPIKE_PCT,
         )
 
     # ── helpers ──────────────────────────────────────────────────────────────

@@ -46,8 +46,8 @@ def create_token_pair(user_id: str, role: str, access_jti: str, refresh_jti: str
     # A.9: Short-lived access token with role claim and JTI
     access_token = create_access_token(user_id, role=role, jti=access_jti)
 
-    # A.9: Long-lived refresh token (7 days) — different JTI for revocation tracking
-    refresh_expires = timedelta(days=7)
+    # A.9: Long-lived refresh token — different JTI for revocation tracking
+    refresh_expires = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
     refresh_token = create_access_token(
         user_id, role=role, jti=refresh_jti, expires_delta=refresh_expires
     )

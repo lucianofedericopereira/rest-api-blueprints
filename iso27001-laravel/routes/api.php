@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\MetricsController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Prometheus metrics — admin only (A.17)
+Route::middleware(['auth:sanctum', 'role:admin'])->get('/metrics', MetricsController::class);
+
 // Health checks — public, no auth required
 Route::get('/health', [HealthController::class, 'liveness'])->withoutMiddleware(['auth:sanctum']);
 Route::get('/health/ready', [HealthController::class, 'readiness'])->withoutMiddleware(['auth:sanctum']);
@@ -32,6 +36,10 @@ Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
         ->withoutMiddleware(['auth:sanctum'])
         ->middleware('throttle:login');
+
+    // A.9: Refresh — requires a valid (non-expired) token; issues a new token pair
+    Route::post('/refresh', [AuthController::class, 'refresh'])
+        ->middleware(['auth:sanctum', 'throttle:login']);
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum');

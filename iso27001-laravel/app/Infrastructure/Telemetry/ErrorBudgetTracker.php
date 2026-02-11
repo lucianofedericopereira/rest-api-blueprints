@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Telemetry;
 
 /**
- * A.17: Error budget tracker.
+ * A.17: Error budget tracker — Redis-backed with in-process fallback.
  *
  * Counts 5xx responses against a configured SLA target. When the budget is
  * exhausted the system should freeze risky deployments and trigger alerts.
@@ -15,34 +15,68 @@ namespace App\Infrastructure\Telemetry;
  *   99.95% →  21.9 min downtime budget per month
  *   99.99% →   4.4 min downtime budget per month
  *
- * Note: counters are in-process only (PHP-FPM is single-threaded per worker).
- * For multi-process durability, back the counters with Redis or APCu.
+ * Storage strategy ("if available, use it"):
+ *   1. Laravel Redis facade (predis / phpredis) — atomic INCR, survives worker
+ *      restarts, cross-process accurate.  Requires REDIS_HOST in .env and the
+ *      illuminate/redis package (bundled with laravel/framework).
+ *   2. In-process counters — zero-dependency fallback; accurate within a single
+ *      PHP-FPM worker.
  */
 final class ErrorBudgetTracker
 {
-    private int $total = 0;
-    private int $failed = 0;
+    private const KEY_TOTAL  = 'error_budget:%s:total';
+    private const KEY_FAILED = 'error_budget:%s:failed';
 
-    public function __construct(private readonly float $slaTarget = 0.999)
-    {
+    /** In-process fallback counters */
+    private int $localTotal  = 0;
+    private int $localFailed = 0;
+
+    private readonly bool   $redisAvailable;
+    private readonly string $keyPrefix;
+
+    public function __construct(
+        private readonly float $slaTarget = 0.999,
+        string $keyPrefix = 'app',
+    ) {
         if ($slaTarget <= 0.0 || $slaTarget >= 1.0) {
             throw new \InvalidArgumentException('slaTarget must be between 0 and 1 exclusive');
         }
+
+        $this->keyPrefix      = $keyPrefix;
+        $this->redisAvailable = $this->detectRedis();
     }
 
     /** Record a completed request. Any 5xx status counts as a budget deduction. */
     public function record(int $statusCode): void
     {
-        ++$this->total;
+        if ($this->redisAvailable) {
+            try {
+                \Illuminate\Support\Facades\Redis::incr(
+                    sprintf(self::KEY_TOTAL, $this->keyPrefix)
+                );
+                if ($statusCode >= 500) {
+                    \Illuminate\Support\Facades\Redis::incr(
+                        sprintf(self::KEY_FAILED, $this->keyPrefix)
+                    );
+                }
+                return;
+            } catch (\Throwable) {
+                // Fall through to in-process
+            }
+        }
+
+        ++$this->localTotal;
         if ($statusCode >= 500) {
-            ++$this->failed;
+            ++$this->localFailed;
         }
     }
 
     /** @return array<string, mixed> */
     public function snapshot(): array
     {
-        if ($this->total === 0) {
+        [$total, $failed, $backend] = $this->readCounters();
+
+        if ($total === 0) {
             return [
                 'sla_target'            => $this->slaTarget,
                 'total_requests'        => 0,
@@ -50,30 +84,90 @@ final class ErrorBudgetTracker
                 'observed_availability' => 1.0,
                 'budget_consumed_pct'   => 0.0,
                 'budget_exhausted'      => false,
+                'backend'               => $backend,
             ];
         }
 
-        $availability     = ($this->total - $this->failed) / $this->total;
+        $availability     = ($total - $failed) / $total;
         $allowedErrorRate = 1.0 - $this->slaTarget;
-        $actualErrorRate  = $this->failed / $this->total;
+        $actualErrorRate  = $failed / $total;
 
         $budgetConsumedPct = $allowedErrorRate > 0.0
             ? min(($actualErrorRate / $allowedErrorRate) * 100.0, 100.0)
-            : ($this->failed > 0 ? 100.0 : 0.0);
+            : ($failed > 0 ? 100.0 : 0.0);
 
         return [
             'sla_target'            => $this->slaTarget,
-            'total_requests'        => $this->total,
-            'failed_requests'       => $this->failed,
+            'total_requests'        => $total,
+            'failed_requests'       => $failed,
             'observed_availability' => round($availability, 6),
             'budget_consumed_pct'   => round($budgetConsumedPct, 2),
             'budget_exhausted'      => $budgetConsumedPct >= 100.0,
+            'backend'               => $backend,
         ];
     }
 
     public function reset(): void
     {
-        $this->total  = 0;
-        $this->failed = 0;
+        if ($this->redisAvailable) {
+            try {
+                \Illuminate\Support\Facades\Redis::del(
+                    sprintf(self::KEY_TOTAL, $this->keyPrefix),
+                    sprintf(self::KEY_FAILED, $this->keyPrefix),
+                );
+                return;
+            } catch (\Throwable) {
+                // Fall through to in-process
+            }
+        }
+
+        $this->localTotal  = 0;
+        $this->localFailed = 0;
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /** @return array{int, int, string} */
+    private function readCounters(): array
+    {
+        if ($this->redisAvailable) {
+            try {
+                $total  = (int) (\Illuminate\Support\Facades\Redis::get(
+                    sprintf(self::KEY_TOTAL, $this->keyPrefix)
+                ) ?? 0);
+                $failed = (int) (\Illuminate\Support\Facades\Redis::get(
+                    sprintf(self::KEY_FAILED, $this->keyPrefix)
+                ) ?? 0);
+                return [$total, $failed, 'redis'];
+            } catch (\Throwable) {
+                // Fall through to in-process
+            }
+        }
+
+        return [$this->localTotal, $this->localFailed, 'in-process'];
+    }
+
+    /**
+     * Check whether the Laravel Redis connection is usable.
+     * Returns false if the Redis facade is absent, not configured, or
+     * the ping fails — no exception is ever propagated.
+     */
+    private function detectRedis(): bool
+    {
+        if (!class_exists(\Illuminate\Support\Facades\Redis::class)) {
+            return false;
+        }
+
+        // Require REDIS_HOST to be explicitly configured
+        if (empty(config('database.redis.default.host'))) {
+            return false;
+        }
+
+        try {
+            \Illuminate\Support\Facades\Redis::ping();
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

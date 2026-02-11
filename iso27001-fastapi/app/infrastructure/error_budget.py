@@ -11,17 +11,16 @@ SLA mapping (99.9% = 43.8 min/month budget):
 """
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from threading import Lock
-from typing import Optional
 
 
 @dataclass
 class ErrorBudgetSnapshot:
     sla_target: float          # e.g. 0.999 for 99.9%
     total_requests: int
-    failed_requests: int
+    failed_requests: int       # 5xx — counts against availability budget
+    client_errors: int         # 4xx — tracked separately; does NOT consume budget
     observed_availability: float
     budget_consumed_pct: float  # 0–100; >100 means budget exhausted
     budget_exhausted: bool
@@ -31,8 +30,9 @@ class ErrorBudgetTracker:
     """
     Thread-safe sliding-window error budget tracker.
 
-    Counts 5xx responses as "errors". 4xx responses are NOT counted
-    (they represent valid client errors, not service failures).
+    Counts 5xx responses as "errors". 4xx responses are tracked separately
+    (they represent client errors, not service failures) so operators can
+    alert on abuse/anomaly patterns without conflating them with availability.
 
     Usage:
         tracker = ErrorBudgetTracker(sla_target=0.999)
@@ -46,27 +46,35 @@ class ErrorBudgetTracker:
             raise ValueError("sla_target must be between 0 and 1 exclusive")
         self._sla_target = sla_target
         self._total: int = 0
-        self._failed: int = 0
+        self._failed: int = 0        # 5xx
+        self._client_errors: int = 0  # 4xx
         self._lock = Lock()
 
     def record(self, status_code: int) -> None:
-        """Record a completed request. Any 5xx counts as a budget deduction."""
+        """Record a completed request.
+        5xx responses deduct from the availability budget.
+        4xx responses are counted separately for anomaly alerting.
+        """
         with self._lock:
             self._total += 1
             if status_code >= 500:
                 self._failed += 1
+            elif 400 <= status_code < 500:
+                self._client_errors += 1
 
     def snapshot(self) -> ErrorBudgetSnapshot:
         """Return current error budget state."""
         with self._lock:
             total = self._total
             failed = self._failed
+            client_errors = self._client_errors
 
         if total == 0:
             return ErrorBudgetSnapshot(
                 sla_target=self._sla_target,
                 total_requests=0,
                 failed_requests=0,
+                client_errors=0,
                 observed_availability=1.0,
                 budget_consumed_pct=0.0,
                 budget_exhausted=False,
@@ -86,6 +94,7 @@ class ErrorBudgetTracker:
             sla_target=self._sla_target,
             total_requests=total,
             failed_requests=failed,
+            client_errors=client_errors,
             observed_availability=round(availability, 6),
             budget_consumed_pct=round(budget_consumed_pct, 2),
             budget_exhausted=budget_consumed_pct >= 100.0,
@@ -96,6 +105,7 @@ class ErrorBudgetTracker:
         with self._lock:
             self._total = 0
             self._failed = 0
+            self._client_errors = 0
 
 
 # Module-level singleton — shared across all middleware/handlers

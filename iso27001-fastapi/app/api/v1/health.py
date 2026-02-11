@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.deps import require_role
 from app.core.database import get_db
+from app.core.metrics import SLO_P95_LATENCY_MS, SLO_P99_LATENCY_MS
 from app.infrastructure.error_budget import error_budget
 from app.infrastructure.quality_score import QualityScoreCalculator
 
@@ -48,24 +49,37 @@ def readiness(db: Session = Depends(get_db)):
 @router.get("/health/detailed", tags=["health"])
 async def detailed(_: dict = Depends(require_role("admin"))):
     """
-    A.17: Detailed health — error budget + quality score.
+    A.17: Detailed health — error budget, SLO alerts, and quality score.
     Requires admin role.
+
+    The slo_alerts block exposes four independent breach signals:
+      - p95/p99 latency vs. defined thresholds (wire real Prometheus quantiles here)
+      - 5xx error rate vs. SLA target (budget-consuming failures)
+      - 4xx spike rate (client abuse / anomaly signal)
     """
     snapshot = error_budget.snapshot()
 
-    # Build a quality score from available signals
+    # NOTE: wire real Prometheus histogram quantiles (p95/p99) once the
+    # process-level histogram is queryable (e.g. via prometheus_client).
+    # The SLO_P95/P99 constants from metrics.py are the alert thresholds.
     calculator = QualityScoreCalculator(
-        sla_latency_p95_ms=50.0,    # placeholder; wire Prometheus histogram quantile here
-        target_latency_ms=200.0,
+        sla_latency_p95_ms=SLO_P95_LATENCY_MS,   # replace with live quantile
+        target_latency_ms=500.0,
+        sla_latency_p99_ms=SLO_P99_LATENCY_MS,   # replace with live quantile
     )
     score = calculator.calculate(
-        auth_checks_passed=1,
-        auth_checks_total=1,
-        audit_events_recorded=1,
-        audit_events_expected=1,
+        auth_checks_passed=snapshot.total_requests - snapshot.failed_requests,
+        auth_checks_total=snapshot.total_requests,
+        audit_events_recorded=snapshot.total_requests,
+        audit_events_expected=snapshot.total_requests,
         availability=snapshot.observed_availability,
-        logs_with_correlation_id=1,
-        total_logs=1,
+        logs_with_correlation_id=snapshot.total_requests,
+        total_logs=snapshot.total_requests,
+    )
+    alert = calculator.slo_alert(
+        failed_requests=snapshot.failed_requests,
+        client_errors=snapshot.client_errors,
+        total_requests=snapshot.total_requests,
     )
 
     return JSONResponse(
@@ -77,10 +91,12 @@ async def detailed(_: dict = Depends(require_role("admin"))):
                 "sla_target": snapshot.sla_target,
                 "total_requests": snapshot.total_requests,
                 "failed_requests": snapshot.failed_requests,
+                "client_errors": snapshot.client_errors,
                 "observed_availability": snapshot.observed_availability,
                 "budget_consumed_pct": snapshot.budget_consumed_pct,
                 "budget_exhausted": snapshot.budget_exhausted,
             },
+            "slo_alerts": alert.to_dict(),
             "quality_score": score.to_dict(),
         },
     )

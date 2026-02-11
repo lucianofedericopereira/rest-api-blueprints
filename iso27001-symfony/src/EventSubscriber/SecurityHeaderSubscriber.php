@@ -41,6 +41,15 @@ final class SecurityHeaderSubscriber implements EventSubscriberInterface
         // A.14: Basic Content Security Policy — tighten per application needs
         $headers->set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
 
+        // Restrict browser feature access (microphone, camera, geolocation)
+        $headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+        // Prevent cross-origin window handle leakage
+        $headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+
+        // Require explicit cross-origin resource embedding opt-in
+        $headers->set('Cross-Origin-Embedder-Policy', 'require-corp');
+
         // Remove server fingerprinting headers
         $headers->remove('X-Powered-By');
         $headers->remove('Server');

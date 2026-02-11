@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.core.telemetry import request_id_ctx, logger
-from app.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
+from app.core.metrics import REQUEST_COUNT, REQUEST_LATENCY, record_error_class
 from app.core.rate_limiter import RedisRateLimiter
 from app.infrastructure.error_budget import error_budget
 from app.infrastructure.aws_telemetry import cw_emitter, xray
@@ -40,7 +40,10 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path, status_code=response.status_code).inc()
         REQUEST_LATENCY.labels(method=request.method, endpoint=request.url.path).observe(duration_s)
 
-        # A.17: Record in error budget (5xx responses consume budget)
+        # A.17: 4xx/5xx separation — record error class for alert-level visibility
+        record_error_class(response.status_code)
+
+        # A.17: Record in error budget (5xx responses consume budget; 4xx tracked separately)
         error_budget.record(status_code=response.status_code)
 
         # CloudWatch custom metrics (no-op when boto3 is absent)
@@ -80,3 +83,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(status_code=429, content={"error": {"code": "RATE_LIMIT", "message": "Too many requests"}})
             raise e
         return await call_next(request)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    A.10: Injects security headers on every HTTP response.
+    Enforces HSTS, prevents clickjacking, stops MIME sniffing, restricts CSP.
+    Mirrors the Symfony SecurityHeaderSubscriber and Laravel SecurityHeadersMiddleware.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        response.headers.pop("server", None)
+        response.headers.pop("x-powered-by", None)
+        return response

@@ -27,7 +27,8 @@ security:
             jwt: ~
 
     access_control:
-        - { path: ^/api/v1/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/auth/login,   roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/auth/refresh, roles: IS_AUTHENTICATED_FULLY }  # A.9: valid JWT required to refresh
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/health, roles: PUBLIC_ACCESS }
 

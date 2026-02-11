@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \App\Http\Middleware\CorrelationIdMiddleware::class,
             \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            \App\Http\Middleware\TelemetryMiddleware::class,  // A.17: error budget + CloudWatch
         ]);
 
         // Register named middleware aliases

@@ -11,15 +11,19 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 /**
- * A.17: Rate limiting middleware.
- * - Auth endpoints: 10 req/min per IP (brute-force protection, A.9)
- * - All other API endpoints: 100 req/min per IP (DoS protection, A.17)
+ * A.17: Rate limiting subscriber — three tiers.
+ * - Auth endpoints:  10 req/min per IP  (login — A.9: brute-force protection)
+ * - Write endpoints: 30 req/min per IP  (POST/PUT/PATCH/DELETE — A.17)
+ * - All other API:  100 req/min per IP  (DoS protection — A.17)
  */
 final class RateLimitSubscriber implements EventSubscriberInterface
 {
+    private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
     public function __construct(
         private readonly RateLimiterFactory $anonymousApiLimiter,
         private readonly RateLimiterFactory $loginIpLimiter,
+        private readonly RateLimiterFactory $writeApiLimiter,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -36,16 +40,23 @@ final class RateLimitSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        $path = $request->getPathInfo();
+        $path    = $request->getPathInfo();
+        $method  = strtoupper($request->getMethod());
 
         // Only apply to API routes
         if (!str_starts_with($path, '/api/')) {
             return;
         }
 
-        $limiter = str_starts_with($path, '/api/v1/auth/login')
-            ? $this->loginIpLimiter->create($request->getClientIp())
-            : $this->anonymousApiLimiter->create($request->getClientIp());
+        $ip = (string) $request->getClientIp();
+
+        if (str_starts_with($path, '/api/v1/auth/login')) {
+            $limiter = $this->loginIpLimiter->create($ip);
+        } elseif (in_array($method, self::WRITE_METHODS, true)) {
+            $limiter = $this->writeApiLimiter->create($ip);
+        } else {
+            $limiter = $this->anonymousApiLimiter->create($ip);
+        }
 
         $limit = $limiter->consume(1);
 

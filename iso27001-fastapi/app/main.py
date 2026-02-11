@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
-from app.core.middleware import CorrelationIdMiddleware, RateLimitMiddleware
+from app.core.middleware import CorrelationIdMiddleware, RateLimitMiddleware, SecurityHeadersMiddleware
 from app.core.database import Base, engine
 from app.core.events import event_bus
 from app.core.exceptions import APIError
@@ -24,14 +24,18 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
 
-    # Middleware Stack
+    # Middleware Stack (added outermost to innermost — Starlette reverses order)
+    app.add_middleware(SecurityHeadersMiddleware)   # A.10: security headers on every response
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(RateLimitMiddleware)
+    # A.9: Explicit CORS allowlist — no wildcard; configured via CORS_ALLOWED_ORIGINS env var
+    allowed_origins = [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], # Configure properly in production
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_origins,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        expose_headers=["X-Request-ID", "X-Response-Time"],
     )
 
     # Routers

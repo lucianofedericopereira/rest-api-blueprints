@@ -21,10 +21,11 @@ iso27001-laravel/    Laravel 12 (PHP 8.2)
 
 | Control | Feature | FastAPI | Symfony | Laravel |
 |---------|---------|:-------:|:-------:|:-------:|
-| A.9 | JWT authentication (short-lived access + refresh tokens) | ✓ | ✓ | ✓ |
-| A.9 | RBAC: `admin > manager > analyst > viewer` | ✓ | ✓ | ✓ |
-| A.9 | Rate limiting — auth (10/min), write (30/min), global (100/min) | ✓ | ✓ | ✓ |
-| A.9 | Brute-force protection on login endpoint | ✓ | ✓ | ✓ |
+| A.9 | JWT authentication — short-lived access token (30 min) + refresh token (7 days) | ✓ | ✓ | ✓ |
+| A.9 | `POST /auth/refresh` — token rotation (old token revoked on issue) | ✓ | ✓ | ✓ |
+| A.9 | RBAC: `admin > manager > analyst > viewer` enforced on every route | ✓ | ✓ | ✓ |
+| A.9 | Rate limiting — auth (10/min), write (30/min), global (100/min) per IP | ✓ | ✓ | ✓ |
+| A.9 | Brute-force lockout — 5 failures → 15 min lock (Redis-backed with fallback) | ✓ | ✓ | ✓ |
 | A.10 | AES-256-GCM field-level encryption (PII at rest) | ✓ | ✓ | ✓ |
 | A.10 | bcrypt / Argon2 password hashing | ✓ | ✓ | ✓ |
 | A.10 | HSTS, X-Frame-Options, CSP, X-Content-Type-Options headers | ✓ | ✓ | ✓ |
@@ -37,17 +38,25 @@ iso27001-laravel/    Laravel 12 (PHP 8.2)
 | A.14 | Static analysis — mypy strict (Python), PHPStan level 8 (PHP) | ✓ | ✓ | ✓ |
 | A.14 | No stack traces or internals exposed to clients | ✓ | ✓ | ✓ |
 | A.17 | Health checks — liveness, readiness, detailed (admin) | ✓ | ✓ | ✓ |
-| A.17 | Error Budget Tracker (99.9% SLA, 5xx budget deduction) | ✓ | ✓ | ✓ |
+| A.17 | Error Budget Tracker — wired to every response; Redis-backed, in-process fallback | ✓ | ✓ | ✓ |
 | A.17 | Quality Score Calculator (risk-weighted: security 40%, integrity 20%, …) | ✓ | ✓ | ✓ |
+
+### Auth Endpoints
+
+| Method | Path | Auth required | Notes |
+|--------|------|:---:|-------|
+| `POST` | `/api/v1/auth/login` | No | Returns access token + refresh token. Rate-limited (10/min). Brute-force locked after 5 failures. |
+| `POST` | `/api/v1/auth/refresh` | Yes (valid token) | Issues new token, revokes old one immediately (token rotation). |
+| `POST` | `/api/v1/auth/logout` | Yes | Revokes current token. |
 
 ### Observability
 
 | Feature | FastAPI | Symfony | Laravel |
 |---------|:-------:|:-------:|:-------:|
-| Prometheus metrics (`/metrics`) | ✓ | — | — |
+| Prometheus metrics (`/metrics`) | ✓ | ✓ | ✓ |
 | Request count + latency histograms | ✓ | ✓ | ✓ |
 | AWS CloudWatch custom metrics emitter | ✓ | ✓ | ✓ |
-| AWS X-Ray trace header propagation | ✓ | — | — |
+| AWS X-Ray trace header propagation | ✓ | ✓ | ✓ |
 | Normalised top-level log shape (all stacks) | ✓ | ✓ | ✓ |
 
 ### Architecture
@@ -64,17 +73,18 @@ iso27001-laravel/    Laravel 12 (PHP 8.2)
 
 ---
 
-## What Is Not Yet Implemented
+## Optional Infrastructure & Known Limits
 
-Architecture-ready (patterns exist, wiring points are marked) but not
-production-complete:
+All optional integrations follow an "if available, use it" pattern — the API
+runs fully without them and silently activates each capability when the
+corresponding package or service is present.
 
 | Feature | Notes |
 |---------|-------|
-| **Prometheus metrics — Symfony / Laravel** | FastAPI exposes `/metrics`. PHP stacks have `MetricsCollector` stub but no exporter endpoint. |
-| **X-Ray SDK integration — Symfony / Laravel** | FastAPI reads and propagates the header. Full `aws-xray-sdk` segment tracing not wired in PHP. |
-| **CloudWatch metrics — requires live credentials** | All three `CloudWatchEmitter` classes are no-ops without `boto3` / `aws/aws-sdk-php` installed and AWS credentials present. |
-| **Error Budget / Quality Score — in-process only (PHP)** | PHP-FPM workers are isolated processes. The `ErrorBudgetTracker` counters reset per request. Back with Redis or APCu for cross-process accuracy. |
+| **Prometheus metrics — PHP** | `/metrics` endpoint wired on all stacks. PHP stacks return live metrics when `promphp/prometheus_client_php` is installed (`composer require promphp/prometheus_client_php`); returns an informative stub otherwise. |
+| **X-Ray SDK segment tracing — PHP** | `X-Amzn-Trace-Id` header is extracted and propagated on all stacks. Full `aws-xray-sdk-php` segment tracing hooks are present; activate by installing the SDK. |
+| **CloudWatch metrics — requires live credentials** | `CloudWatchEmitter.emitRequest()` is called on every response in all three stacks (FastAPI: `CorrelationIdMiddleware`; Symfony: `TelemetrySubscriber`; Laravel: `TelemetryMiddleware`). The emitter is a no-op without `boto3` / `aws/aws-sdk-php` installed and AWS credentials present. Install: `pip install -e .[aws]` (Python) or `composer require aws/aws-sdk-php` (PHP). |
+| **Error Budget — cross-process accuracy (PHP)** | `ErrorBudgetTracker.record()` is called on every response in all three stacks (FastAPI: `CorrelationIdMiddleware`; Symfony: `TelemetrySubscriber`; Laravel: `TelemetryMiddleware`). PHP auto-detects Redis (`REDIS_URL` / `REDIS_HOST`) and uses atomic `INCR`; falls back to in-process counters. Snapshot includes a `backend` field (`redis` or `in-process`). |
 | **P95/P99 per-endpoint latency alerts** | Prometheus histogram is recorded; no SLO alert rule or dashboard is defined. |
 | **4xx vs 5xx error rate separation** | Error budget counts only 5xx. Separate rules for 4xx anomalies are not defined. |
 | **External dependency health (circuit breakers)** | Readiness check does not include downstream API state. |
@@ -155,8 +165,8 @@ fields timestamp, level, message, service, request_id
 
 | Annex | Title | Controls demonstrated |
 |-------|-------|-----------------------|
-| A.9 | Access Control | JWT, RBAC, rate limiting, brute-force protection |
-| A.10 | Cryptography | AES-256-GCM field encryption, bcrypt/Argon2 password hashing, transport security headers |
-| A.12 | Operations Security | Structured logging, audit trail, correlation IDs, log normalisation |
-| A.14 | Secure Development | Input validation, static analysis, secure error handling |
-| A.17 | Business Continuity | Health checks, error budget, rate limiting, availability SLA |
+| A.9 | Access Control | JWT access + refresh tokens, RBAC (admin > manager > analyst > viewer), tiered rate limiting (auth 10/min · write 30/min · global 100/min), brute-force account lockout (5 failures → 15 min lock, Redis-backed) |
+| A.10 | Cryptography | AES-256-GCM field encryption (32-byte key, 12-byte IV, 16-byte auth tag), bcrypt/Argon2 password hashing, HSTS + X-Frame-Options + CSP + X-Content-Type-Options on every response |
+| A.12 | Operations Security | Structured JSON logging with sensitive-field redaction, immutable audit_logs table, event-driven audit trail, correlation IDs (X-Request-ID) in logs and responses, identical log shape across all stacks |
+| A.14 | Secure Development | Input validation (Pydantic v2 / Symfony Validator / FormRequest), mypy strict + PHPStan level 8 in CI, no stack traces or internals exposed to clients |
+| A.17 | Business Continuity | Liveness / readiness / detailed health checks, error budget tracker (99.9% SLA, 5xx budget deduction, wired to every response), quality score calculator (security 40% · integrity 20% · reliability 15% · auditability 15% · performance 10%), tiered rate limiting |
