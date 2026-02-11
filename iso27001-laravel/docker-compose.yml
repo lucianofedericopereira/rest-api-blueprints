@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "9001:9000"
+    environment:
+      - APP_ENV=local
+      - APP_KEY=base64:change_me_run_artisan_key_generate==
+      - APP_DEBUG=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=iso27001
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=ChangeMe
+      - CACHE_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SANCTUM_EXPIRATION=30
+      - ENCRYPTION_KEY=dev-only-32-byte-key-change-me!!
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=iso27001
+      - POSTGRES_USER=laravel
+      - POSTGRES_PASSWORD=ChangeMe
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  db_data:

@@ -1,0 +1,16 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        # A.10: Use server-side prepared statements to prevent SQL injection
+        use_savepoints: true
+
+    orm:
+        auto_generate_proxy_classes: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        auto_mapping: true
+        mappings:
+            App:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain'
+                prefix: 'App\Domain'
+                alias: App

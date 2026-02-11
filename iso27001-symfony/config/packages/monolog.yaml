@@ -1,0 +1,18 @@
+monolog:
+  handlers:
+    main:
+      type: stream
+      path: php://stdout
+      level: info
+      # A.12: StructuredJsonFormatter produces the same top-level JSON shape as
+      # the FastAPI StructuredLogger, enabling identical CloudWatch Logs Insights
+      # queries across all three stacks.
+      formatter: App\Logging\StructuredJsonFormatter
+    audit:
+      type: stream
+      path: '%kernel.logs_dir%/audit.log'
+      level: info
+      channels: ['audit']
+      formatter: App\Logging\StructuredJsonFormatter
+  channels:
+    - audit

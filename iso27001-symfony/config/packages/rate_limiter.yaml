@@ -1,0 +1,13 @@
+framework:
+    rate_limiter:
+        # A.17: Global rate limit (Availability Protection)
+        anonymous_api:
+            policy: fixed_window
+            limit: 100
+            interval: 1 minute
+
+        # A.9: Brute force protection for authentication
+        login_ip:
+            policy: fixed_window
+            limit: 10
+            interval: 1 minute

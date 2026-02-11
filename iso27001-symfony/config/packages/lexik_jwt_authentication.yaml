@@ -1,0 +1,13 @@
+# A.9: JWT Authentication — LexikJWTAuthenticationBundle
+lexik_jwt_authentication:
+    secret_key: '%env(resolve:JWT_SECRET_KEY)%'
+    public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
+    pass_phrase: '%env(JWT_PASSPHRASE)%'
+    token_ttl: 1800  # 30 minutes — A.9: short-lived access tokens
+
+    # A.9: Extract token from Authorization: Bearer header
+    token_extractors:
+        authorization_header:
+            enabled: true
+            prefix: Bearer
+            name: Authorization

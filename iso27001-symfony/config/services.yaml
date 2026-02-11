@@ -1,0 +1,44 @@
+parameters:
+    app.service_name: '%env(APP_NAME)%'
+    app.environment: '%kernel.environment%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/User/Entity/'
+            - '../src/Kernel.php'
+
+    # A.12: Inject 'audit' channel logger into AuditService
+    App\Audit\AuditService:
+        arguments:
+            $auditLogger: '@monolog.logger.audit'
+
+    # A.12: Structured log processor — injects request_id / service into extra[]
+    App\Logging\StructuredProcessor:
+        arguments:
+            $serviceName: '%app.service_name%'
+            $environment: '%app.environment%'
+        tags:
+            - { name: monolog.processor }
+
+    # A.12: Structured JSON formatter — promotes extra[] to top-level JSON fields
+    # so log shape is identical to the FastAPI StructuredLogger output.
+    App\Logging\StructuredJsonFormatter:
+        public: true
+
+    # A.10: Field encryptor — key from environment
+    App\Infrastructure\Encryption\FieldEncryptor:
+        arguments:
+            $key: '%env(ENCRYPTION_KEY)%'
+
+    # Audit repository implementation
+    App\Audit\AuditRepository: '@App\Audit\DoctrineAuditRepository'
+
+    # User repository implementation
+    App\Domain\User\Repository\UserRepositoryInterface: '@App\Domain\User\Repository\UserRepository'

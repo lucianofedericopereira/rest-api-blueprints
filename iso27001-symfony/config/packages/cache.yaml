@@ -1,0 +1,11 @@
+framework:
+    cache:
+        # Redis-backed cache adapter for rate limiting and session storage
+        app: cache.adapter.redis
+        default_redis_provider: '%env(REDIS_URL)%'
+
+        pools:
+            # Rate limiter storage pool
+            cache.rate_limiter:
+                adapter: cache.adapter.redis
+                provider: '%env(REDIS_URL)%'
