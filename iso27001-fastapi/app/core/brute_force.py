@@ -30,7 +30,7 @@ _local: dict[str, dict[str, float | int]] = {}
 def _redis_client() -> Any:
     """Return a redis.Redis client or None if unavailable."""
     try:
-        import redis as _redis  # type: ignore[import-not-found]
+        import redis as _redis  # type: ignore[import-untyped]
         from app.config.settings import settings
 
         client = _redis.Redis.from_url(

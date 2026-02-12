@@ -21,14 +21,14 @@ def list_users(
     limit: int = Query(20, ge=1, le=100),
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
-) -> list[UserResponse]:
+) -> list[User]:
     """List users (Admin only)."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return service.list_users(skip, limit)
 
 @router.get("/me", response_model=UserResponse)
-def read_users_me(current_user: User = Depends(get_current_user)) -> UserResponse:
+def read_users_me(current_user: User = Depends(get_current_user)) -> User:
     """Get current authenticated user profile."""
     return current_user
 
@@ -36,7 +36,7 @@ def read_users_me(current_user: User = Depends(get_current_user)) -> UserRespons
 def get_user(
     user: User = Depends(resolve_user),
     current_user: User = Depends(get_current_user),
-) -> UserResponse:
+) -> User:
     """Get a specific user (Owner or Admin)."""
     if current_user.role != "admin" and current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
@@ -48,7 +48,7 @@ def update_user(
     user: User = Depends(resolve_user),
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
-) -> UserResponse:
+) -> User:
     """Update user profile (Owner or Admin)."""
     if current_user.role != "admin" and current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")

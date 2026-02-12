@@ -37,12 +37,12 @@ final class MetricsController extends AbstractController
         if (class_exists('Prometheus\CollectorRegistry')) {
             $rendererClass  = 'Prometheus\RenderTextFormat';
             $registryClass  = 'Prometheus\CollectorRegistry';
-            /** @var object $renderer */
+            /** @phpstan-ignore-next-line */
             $renderer = new $rendererClass();
-            /** @var object $registry */
+            /** @phpstan-ignore-next-line */
             $registry = $registryClass::getDefault();
-            /** @var string $output */
-            $output = $renderer->render($registry->getMetricFamilySamples()); // @phpstan-ignore-line
+            /** @phpstan-ignore-next-line */
+            $output = $renderer->render($registry->getMetricFamilySamples());
             $mime   = constant($rendererClass . '::MIME_TYPE');
             return new Response((string) $output, Response::HTTP_OK, ['Content-Type' => (string) $mime]);
         }
