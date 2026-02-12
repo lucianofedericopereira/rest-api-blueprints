@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domain\User\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,6 +26,7 @@ final class RoleMiddleware
 
     public function handle(Request $request, Closure $next, string $requiredRole): mixed
     {
+        /** @var User|null $user */
         $user = $request->user();
 
         if ($user === null) {

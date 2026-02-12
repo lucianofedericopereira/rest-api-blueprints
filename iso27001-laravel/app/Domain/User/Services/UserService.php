@@ -55,6 +55,7 @@ final class UserService
         return $this->repository->findById($id);
     }
 
+    /** @return LengthAwarePaginator<int, User> */
     public function listUsers(int $page = 1, int $perPage = 25): LengthAwarePaginator
     {
         return $this->repository->paginate($page, $perPage);

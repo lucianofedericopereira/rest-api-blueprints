@@ -55,7 +55,7 @@ def _local_check(key: str, limit: int, window: int) -> bool:
 
 def _redis_client() -> Any:
     try:
-        import redis as _redis  # type: ignore[import-untyped]
+        import redis as _redis
         from app.config.settings import settings
 
         client = _redis.Redis.from_url(

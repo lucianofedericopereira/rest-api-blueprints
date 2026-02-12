@@ -17,8 +17,8 @@ deptrac:
 
     - name: Domain
       collectors:
-        - type: directory
-          value: src/Domain/.*
+        - type: classLike
+          value: App\\Domain\\(?!.*\\(Service|Repository)\\).*
 
     - name: Infrastructure
       collectors:
@@ -29,12 +29,12 @@ deptrac:
 
     - name: Application
       collectors:
-        - type: directory
-          value: src/Domain/.*/Service/.*
-        - type: directory
-          value: src/Domain/.*/Repository/.*
-        - type: directory
-          value: src/Audit/.*
+        - type: classLike
+          value: App\\Domain\\.*\\Service\\.*
+        - type: classLike
+          value: App\\Domain\\.*\\Repository\\.*
+        - type: classLike
+          value: App\\Audit\\.*
 
     - name: Api
       collectors:

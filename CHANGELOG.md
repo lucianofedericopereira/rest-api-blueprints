@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `middleware.py`: replaced `response.headers.pop("server", None)` with `if "server" in ...: del ...` — `MutableHeaders` supports `del` but not `.pop()`; same for `x-powered-by`
 - `users.py`: removed 4 unused `# type: ignore[return-value]` comments — mypy strict already verified those returns correctly
 
+## [1.4.2] - 2026-02-12
+
+### Fixed
+
+**Laravel — static analysis (PHPStan level 8, 15 errors)**
+- `UserRepositoryInterface`, `EloquentUserRepository`: tightened `LengthAwarePaginator<User>` → `LengthAwarePaginator<int, User>` (two type parameters required by Larastan 3.x generics)
+- `UserService::listUsers()`: added `@return LengthAwarePaginator<int, User>` docblock to match updated interface
+- `phpstan.neon`: added `identifier: missingType.generics` to `ignoreErrors` — suppresses `HasFactory` missing generic type (`TFactory`) since no `UserFactory` is defined
+- `MetricsController`: replaced `\Prometheus\*` FQCN references with string-variable class names + `@phpstan-ignore-next-line` — same pattern as Symfony; eliminates "Instantiated class not found" errors for optional dependency
+- `RoleMiddleware`, `RouteServiceProvider`: added `/** @var User|null $user */` cast after `$request->user()` — resolves `App\Models\User` unknown class errors (Larastan defaults to wrong namespace; explicit cast forces `App\Domain\User\Models\User`)
+- `UserResource`: added `@mixin User` to class docblock — resolves 5 "Access to undefined property" errors (`id`, `role`, `deleted_at`, `created_at`, `updated_at`) from `JsonResource` magic property delegation
+- `CloudWatchEmitter`: replaced `env()` calls with `config()` (`services.aws.cloudwatch_namespace`, `services.aws.region`) — resolves Larastan "env() called outside config" errors; replaced `\Aws\CloudWatch\CloudWatchClient::class` FQCN reference with string variable `$clientClass` to eliminate "unknown class" static analysis error
+- Added `config/services.php` with `services.aws.region` and `services.aws.cloudwatch_namespace` keys backed by `AWS_DEFAULT_REGION` / `AWS_CLOUDWATCH_NAMESPACE` env vars
+
+**FastAPI — mypy strict (5 errors)**
+- `aws_telemetry.py`: reverted `boto3` and `aws_xray_sdk` ignores back to `import-not-found` — packages are optional (`[aws]` extras) and not installed in CI; `import-untyped` caused "unused ignore" errors when the modules are absent
+- `rate_limiter.py`, `brute_force.py`: removed `# type: ignore[import-untyped]` from `redis` imports — `redis` is now a direct dependency with bundled type stubs, making the ignore comment unused
+
 ## [1.4.1] - 2026-02-12
 
 ### Added

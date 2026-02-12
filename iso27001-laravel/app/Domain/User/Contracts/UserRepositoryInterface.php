@@ -18,7 +18,7 @@ interface UserRepositoryInterface
 
     public function findByEmail(string $email): ?User;
 
-    /** @return LengthAwarePaginator<User> */
+    /** @return LengthAwarePaginator<int, User> */
     public function paginate(int $page, int $perPage): LengthAwarePaginator;
 
     /**

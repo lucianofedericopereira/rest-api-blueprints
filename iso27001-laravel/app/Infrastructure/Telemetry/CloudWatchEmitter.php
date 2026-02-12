@@ -31,7 +31,7 @@ final class CloudWatchEmitter
 
     public function __construct()
     {
-        $this->namespace   = (string) env('AWS_CLOUDWATCH_NAMESPACE', 'ISO27001/API');
+        $this->namespace   = (string) config('services.aws.cloudwatch_namespace', 'ISO27001/API');
         $this->service     = (string) config('app.name', 'iso27001-api');
         $this->environment = (string) config('app.env', 'production');
         $this->client      = $this->buildClient();
@@ -108,15 +108,16 @@ final class CloudWatchEmitter
 
     private function buildClient(): ?object
     {
-        if (!class_exists(\Aws\CloudWatch\CloudWatchClient::class)) {
+        if (!class_exists('Aws\CloudWatch\CloudWatchClient')) {
             return null;
         }
 
-        $region = (string) env('AWS_DEFAULT_REGION', 'eu-west-1');
+        $region      = (string) config('services.aws.region', 'eu-west-1');
+        $clientClass = 'Aws\CloudWatch\CloudWatchClient';
 
         try {
             /** @phpstan-ignore-next-line */
-            return new \Aws\CloudWatch\CloudWatchClient(['region' => $region, 'version' => 'latest']);
+            return new $clientClass(['region' => $region, 'version' => 'latest']);
         } catch (\Throwable $e) {
             Log::warning('Could not build CloudWatch client', ['error' => $e->getMessage()]);
             return null;

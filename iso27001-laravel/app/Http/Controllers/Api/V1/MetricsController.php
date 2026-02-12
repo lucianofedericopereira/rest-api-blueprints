@@ -30,16 +30,17 @@ final class MetricsController extends Controller
     public function __invoke(): Response
     {
         // If prometheus_client_php is installed, render its registry
-        if (class_exists(\Prometheus\CollectorRegistry::class)) {
+        if (class_exists('Prometheus\CollectorRegistry')) {
+            $rendererClass = 'Prometheus\RenderTextFormat';
+            $registryClass = 'Prometheus\CollectorRegistry';
             /** @phpstan-ignore-next-line */
-            $renderer = new \Prometheus\RenderTextFormat();
+            $renderer = new $rendererClass();
             /** @phpstan-ignore-next-line */
-            $registry = \Prometheus\CollectorRegistry::getDefault();
-            return response(
-                $renderer->render($registry->getMetricFamilySamples()),
-                Response::HTTP_OK,
-                ['Content-Type' => \Prometheus\RenderTextFormat::MIME_TYPE],
-            );
+            $registry = $registryClass::getDefault();
+            /** @phpstan-ignore-next-line */
+            $output = $renderer->render($registry->getMetricFamilySamples());
+            $mime   = constant($rendererClass . '::MIME_TYPE');
+            return response((string) $output, Response::HTTP_OK, ['Content-Type' => (string) $mime]);
         }
 
         // Graceful stub — tells scrapers the endpoint exists but SDK is absent

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\User\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ final class RouteServiceProvider extends ServiceProvider
 
         // Write operations: 30 req/min per authenticated user token
         RateLimiter::for('write', function (Request $request) {
+            /** @var User|null $user */
             $user = $request->user();
             return Limit::perMinute(30)->by(
                 $user !== null ? $user->id : $request->ip()

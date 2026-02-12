@@ -7,4 +7,5 @@ parameters:
         # Eloquent magic properties
         - '#Access to an undefined property App\\Domain\\User\\Models\\User::\$#'
         - identifier: missingType.iterableValue
+        - identifier: missingType.generics
     reportUnmatchedIgnoredErrors: false
