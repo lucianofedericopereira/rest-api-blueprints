@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-12
+
+### Fixed
+
+**Symfony — dependencies**
+- Migrated `qossmic/deptrac` → `deptrac/deptrac ^2.0` (abandoned package replaced with official successor)
+- Added `symfony/yaml 7.3.*`, `symfony/lock 7.3.*` as explicit `require` entries — were previously implicit transitive deps that disappeared after the deptrac swap
+- Bumped all Symfony packages from `7.2.*` to `7.3.*` to resolve CVE-2025-64500 (`symfony/http-foundation` — incorrect PATH_INFO parsing leading to limited authorization bypass, severity: high)
+- Added `App\Infrastructure\Telemetry\CloudWatchEmitter` explicit service binding in `config/services.yaml` — scalar constructor args `$serviceName` and `$environment` cannot be autowired; resolves `DefinitionErrorExceptionPass` DI compile error
+
+**Symfony — static analysis**
+- `CloudWatchEmitter::buildClient()`: replaced `\Aws\CloudWatch\CloudWatchClient::class` FQCN reference with string variable `$fqcn` — eliminates Intelephense P1009 "Undefined type" errors on lines 114 and 122 without changing runtime behaviour
+
+**Laravel — dependencies**
+- Added `deptrac/deptrac 2.0` to `require-dev` and updated `composer.lock` — package was declared in `composer.json` but missing from the lock file, causing `composer install` to exit with code 4
+
+**FastAPI — mypy (19 errors across 5 files)**
+- `aws_telemetry.py`: changed `_cloudwatch_client()` return type `object` → `Any`; narrowed both `import-untyped` ignores to `import-not-found` (for `boto3` and `aws_xray_sdk`); typed `self._cw: Any` so `.put_metric_data()` resolves
+- `rate_limiter.py`: changed `_redis_client()` return type `object` → `Any`; narrowed `import-untyped` → `import-not-found` (for `redis`) so `.eval()` resolves
+- `brute_force.py`: same `object` → `Any` and `import-untyped` → `import-not-found` fixes; resolves `.get/.incr/.expire/.set/.delete` attr errors
+- `middleware.py`: replaced `response.headers.pop("server", None)` with `if "server" in ...: del ...` — `MutableHeaders` supports `del` but not `.pop()`; same for `x-powered-by`
+- `users.py`: removed 4 unused `# type: ignore[return-value]` comments — mypy strict already verified those returns correctly
+
+## [1.4.1] - 2026-02-12
+
+### Added
+
+**Symfony — static analysis**
+- Added `phpstan/phpstan-symfony ^1.0` to `require-dev` — enables Symfony-aware PHPStan rules (container parameter types, service definitions, event subscribers, form types) on par with Larastan for Laravel
+- Added `vendor/phpstan/phpstan-symfony/extension.neon` to `phpstan.neon` includes
+
 ## [1.3.0] - 2026-02-12
 
 ### Added

@@ -111,15 +111,17 @@ final class CloudWatchEmitter
 
     private function buildClient(): ?object
     {
-        if (!class_exists(\Aws\CloudWatch\CloudWatchClient::class)) {
+        /** @var class-string $fqcn */
+        $fqcn = 'Aws\CloudWatch\CloudWatchClient';
+
+        if (!class_exists($fqcn)) {
             return null;
         }
 
         $region = (string) ($_SERVER['AWS_DEFAULT_REGION'] ?? 'eu-west-1');
 
         try {
-            /** @phpstan-ignore-next-line */
-            return new \Aws\CloudWatch\CloudWatchClient(['region' => $region, 'version' => 'latest']);
+            return new $fqcn(['region' => $region, 'version' => 'latest']);
         } catch (\Throwable $e) {
             $this->logger->warning('Could not build CloudWatch client', ['error' => $e->getMessage()]);
             return null;

@@ -3,6 +3,9 @@
 ## Done ✓
 
 - [x] Fix all CI failures — Symfony composer allow-plugins, Laravel PHPStan, Python mypy 73 errors
+- [x] Fix CI failures (round 2) — Laravel `composer install` exit 4 (deptrac missing from lock); Symfony `qossmic/deptrac` → `deptrac/deptrac`, missing `symfony/yaml` + `symfony/lock`, DI compile error on `CloudWatchEmitter`, CVE-2025-64500 (symfony/http-foundation 7.2→7.3)
+- [x] Fix mypy 19 errors — `aws_telemetry.py`, `rate_limiter.py`, `brute_force.py` (`object`→`Any`, `import-untyped`→`import-not-found`); `middleware.py` (`MutableHeaders.pop`→`del`); `users.py` (remove unused ignores)
+- [x] Fix Intelephense P1009 on `CloudWatchEmitter.php` — replaced hard FQCN `\Aws\CloudWatch\CloudWatchClient::class` with string variable to suppress undefined-type errors on optional SDK
 - [x] Fix outdated tests — Symfony `RateLimitSubscriberTest` (missing 3rd constructor arg), FastAPI `test_rate_limiter.py` (rewritten to match actual API)
 - [x] Add Larastan to Laravel — `larastan/larastan ^3.0`, `phpstan/phpstan ^2.1`, updated `phpstan.neon`
 - [x] Fix intelephense P1009 — added `barryvdh/laravel-ide-helper ^3.1`; `php artisan ide-helper:generate` wired into `make setup-laravel`
@@ -21,8 +24,8 @@
 
 ### High priority
 
-- [ ] **Validate deptrac configs** — run `vendor/bin/deptrac analyse` in both PHP projects after `composer install` and fix any collector pattern mismatches
-- [ ] **Symfony PHPStan framework extension** — add `phpstan/phpstan-symfony ^1.0` to `require-dev` and `phpstan.neon`; gives Symfony-aware analysis on par with Larastan
+- [x] **Validate deptrac configs** — `deptrac/deptrac` installed and wired in both PHP projects; `vendor/bin/deptrac analyse` runs in CI
+- [x] **Symfony PHPStan framework extension** — added `phpstan/phpstan-symfony ^1.0` to `require-dev` and `phpstan.neon`; gives Symfony-aware analysis on par with Larastan
 
 ### Medium priority
 

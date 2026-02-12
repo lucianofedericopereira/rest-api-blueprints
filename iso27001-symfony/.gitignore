@@ -5,19 +5,30 @@
 /public/bundles/
 /var/
 /vendor/
+
 # JWT keys — A.10: never commit private key material
 /config/jwt/private.pem
 /config/jwt/public.pem
-# PHPUnit cache
-.phpunit.result.cache
-.phpunit.cache
+/config/jwt/*.pem
+
 # IDE
 /.idea/
 /.vscode/
 /.fleet/
+
 # Composer
 composer.lock
+
 # Logs & coverage
 *.log
 coverage/
+junit*.xml
+
+# Static analysis caches
 .phpstan.cache
+/phpstan-baseline.neon
+
+# PHPUnit
+/phpunit.xml
+/.phpunit.cache/
+.phpunit.result.cache

@@ -37,6 +37,12 @@ services:
         arguments:
             $key: '%env(ENCRYPTION_KEY)%'
 
+    # A.12: CloudWatch telemetry emitter — scalar args cannot be autowired
+    App\Infrastructure\Telemetry\CloudWatchEmitter:
+        arguments:
+            $serviceName: '%app.service_name%'
+            $environment: '%app.environment%'
+
     # Audit repository implementation
     App\Audit\AuditRepository: '@App\Audit\DoctrineAuditRepository'
 

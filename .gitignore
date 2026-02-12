@@ -9,6 +9,7 @@
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # A.10: Never commit secrets or key material
 *.pem
@@ -16,5 +17,17 @@ Thumbs.db
 *.p12
 *.pfx
 .env
+.env.local
+.env.*.local
 secrets/
 credentials.json
+auth.json
+
+# Composer lock files (each project manages its own)
+iso27001-symfony/composer.lock
+iso27001-laravel/composer.lock
+
+# Coverage / test artefacts
+coverage/
+*.lcov
+junit*.xml

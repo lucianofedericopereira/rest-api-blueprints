@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,10 @@ _CW_NAMESPACE = os.getenv("AWS_CLOUDWATCH_NAMESPACE", "ISO27001/API")
 _AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "eu-west-1")
 
 
-def _cloudwatch_client() -> object:
+def _cloudwatch_client() -> Any:
     """Return a boto3 CloudWatch client, or None if boto3 is not installed."""
     try:
-        import boto3  # type: ignore[import-untyped]
+        import boto3  # type: ignore[import-not-found]
         return boto3.client("cloudwatch", region_name=_AWS_REGION)
     except ImportError:
         logger.debug("boto3 not installed — CloudWatch metrics disabled")
@@ -50,7 +50,7 @@ class CloudWatchEmitter:
     def __init__(self, service_name: str, environment: str = "production") -> None:
         self._service = service_name
         self._env = environment
-        self._cw = _cloudwatch_client()
+        self._cw: Any = _cloudwatch_client()
 
     # ── public API ───────────────────────────────────────────────────────────
 
@@ -153,7 +153,7 @@ class XRayTracer:
     def begin_segment(name: str, trace_id: Optional[str] = None) -> None:
         """Start an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-not-found]
             xray_recorder.begin_segment(name, traceid=trace_id)
         except ImportError:
             pass
@@ -162,7 +162,7 @@ class XRayTracer:
     def end_segment() -> None:
         """End an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-not-found]
             xray_recorder.end_segment()
         except ImportError:
             pass

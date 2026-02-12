@@ -64,6 +64,7 @@ venv.bak/
 # IDE
 .idea/
 .vscode/
+.fleet/
 *.swp
 *.swo
 *~
@@ -83,6 +84,12 @@ dmypy.json
 # Logs
 logs/
 *.log
+
+# import-linter cache
+.import_linter_cache/
+
+# Coverage / test artefacts
+junit*.xml
 
 # A.10: Never commit secrets
 secrets/

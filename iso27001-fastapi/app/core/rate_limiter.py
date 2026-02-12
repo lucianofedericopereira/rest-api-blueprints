@@ -10,6 +10,7 @@ Falls back to an in-process sliding window when Redis is unavailable.
 """
 
 import time
+from typing import Any
 from fastapi import Request, HTTPException, status
 
 _LIMITS: dict[str, int] = {
@@ -52,9 +53,9 @@ def _local_check(key: str, limit: int, window: int) -> bool:
     return True
 
 
-def _redis_client() -> object:
+def _redis_client() -> Any:
     try:
-        import redis as _redis  # type: ignore[import-untyped]
+        import redis as _redis  # type: ignore[import-not-found]
         from app.config.settings import settings
 
         client = _redis.Redis.from_url(

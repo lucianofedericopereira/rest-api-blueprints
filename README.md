@@ -2,14 +2,14 @@
 
 Three production-grade reference implementations of a REST API demonstrating
 **ISO 27001** security controls with Domain-Driven Design, structured telemetry,
-and defensive security patterns in **PHP (Symfony 7.2 / Laravel 12)** and
+and defensive security patterns in **PHP (Symfony 7.3 / Laravel 12)** and
 **Python (FastAPI 0.111+)**.
 
 ## Project Structure
 
 ```
 iso27001-fastapi/    FastAPI (Python 3.11)
-iso27001-symfony/    Symfony 7.2 (PHP 8.2)
+iso27001-symfony/    Symfony 7.3 (PHP 8.2)
 iso27001-laravel/    Laravel 12 (PHP 8.2)
 rules/               Cross-project ISO 27001 rule registry + validator
 .pre-commit-config.yaml   Root-level pre-commit hooks (secret scan, lint, format)
@@ -157,7 +157,7 @@ Prevents architectural drift: Domain must never import Infrastructure, etc.
 
 | Tool | Projects | Config |
 |------|----------|--------|
-| [deptrac](https://github.com/qossmic/deptrac) | Symfony, Laravel | `deptrac.yaml` per project |
+| [deptrac](https://github.com/deptrac/deptrac) | Symfony, Laravel | `deptrac.yaml` per project |
 | [import-linter](https://import-linter.readthedocs.io/) | FastAPI | `iso27001-fastapi/.importlinter` |
 
 ```bash

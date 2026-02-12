@@ -15,6 +15,7 @@ Install Redis for production accuracy:
 """
 
 import time
+from typing import Any
 from fastapi import HTTPException, status
 
 _MAX_ATTEMPTS: int = 5
@@ -26,10 +27,10 @@ _KEY_PREFIX = "brute_force:"
 _local: dict[str, dict[str, float | int]] = {}
 
 
-def _redis_client() -> object:
+def _redis_client() -> Any:
     """Return a redis.Redis client or None if unavailable."""
     try:
-        import redis as _redis  # type: ignore[import-untyped]
+        import redis as _redis  # type: ignore[import-not-found]
         from app.config.settings import settings
 
         client = _redis.Redis.from_url(
