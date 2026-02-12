@@ -20,13 +20,13 @@ class StructuredLogger:
         "credit_card", "ssn", "refresh_token", "cookie",
     })
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self._logger = logging.getLogger(name)
         handler = logging.StreamHandler()
         self._logger.addHandler(handler)
         self._logger.setLevel(logging.DEBUG if settings.APP_DEBUG else logging.INFO)
 
-    def _redact(self, data: dict) -> dict:
+    def _redact(self, data: dict[str, object]) -> dict[str, object]:
         """A.12: Automatically strip sensitive fields. Never manual."""
         return {
             k: "[REDACTED]" if k.lower() in self.REDACTED_FIELDS
@@ -35,7 +35,7 @@ class StructuredLogger:
             for k, v in data.items()
         }
 
-    def _entry(self, level: str, message: str, **ctx) -> dict:
+    def _entry(self, level: str, message: str, **ctx: object) -> dict[str, object]:
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": level,
@@ -47,16 +47,16 @@ class StructuredLogger:
             "context": self._redact(ctx) if ctx else None,
         }
 
-    def info(self, msg: str, **ctx):
+    def info(self, msg: str, **ctx: object) -> None:
         self._logger.info(json.dumps(self._entry("INFO", msg, **ctx)))
 
-    def warning(self, msg: str, **ctx):
+    def warning(self, msg: str, **ctx: object) -> None:
         self._logger.warning(json.dumps(self._entry("WARNING", msg, **ctx)))
 
-    def error(self, msg: str, **ctx):
+    def error(self, msg: str, **ctx: object) -> None:
         self._logger.error(json.dumps(self._entry("ERROR", msg, **ctx)))
 
-    def audit(self, action: str, user_id: str, **ctx):
+    def audit(self, action: str, user_id: str, **ctx: object) -> None:
         """A.12: Immutable audit trail entry for compliance."""
         self._logger.info(json.dumps(self._entry(
             "AUDIT", f"audit.{action}",

@@ -37,5 +37,5 @@ def record_error_class(status_code: int) -> None:
         ERROR_CLASS_COUNT.labels(error_class="5xx").inc()
 
 
-def get_metrics():
+def get_metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

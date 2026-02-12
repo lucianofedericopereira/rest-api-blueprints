@@ -1,0 +1,57 @@
+# pre-commit — cross-project hooks for all three stacks
+#
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+
+repos:
+
+  # ── A.10: Secret scanning — never commit credentials ───────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  # ── General file hygiene ────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key          # A.10: blocks accidental key commits
+
+  # ── Python (FastAPI) ────────────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^iso27001-fastapi/
+      - id: ruff-format
+        files: ^iso27001-fastapi/
+
+  # ── PHP — Laravel & Symfony (formatting) ───────────────────────────────────
+  - repo: local
+    hooks:
+      - id: pint-laravel
+        name: Laravel Pint (PHP formatting)
+        language: system
+        entry: bash -c 'cd iso27001-laravel && vendor/bin/pint --dirty'
+        files: ^iso27001-laravel/.*\.php$
+        pass_filenames: false
+
+      - id: phpstan-laravel
+        name: Laravel PHPStan (static analysis)
+        language: system
+        entry: bash -c 'cd iso27001-laravel && vendor/bin/phpstan analyse --no-progress'
+        files: ^iso27001-laravel/app/.*\.php$
+        pass_filenames: false
+
+      - id: phpstan-symfony
+        name: Symfony PHPStan (static analysis)
+        language: system
+        entry: bash -c 'cd iso27001-symfony && vendor/bin/phpstan analyse --no-progress'
+        files: ^iso27001-symfony/src/.*\.php$
+        pass_filenames: false

@@ -24,6 +24,7 @@ final class EloquentUserRepository implements UserRepositoryInterface
         return User::query()->where('email', $email)->first();
     }
 
+    /** @return LengthAwarePaginator<User> */
     public function paginate(int $page, int $perPage): LengthAwarePaginator
     {
         return User::query()
@@ -31,16 +32,24 @@ final class EloquentUserRepository implements UserRepositoryInterface
             ->paginate(perPage: $perPage, page: $page);
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function create(array $attributes): User
     {
         return User::query()->create($attributes);
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function update(User $user, array $attributes): User
     {
         $user->fill($attributes);
         $user->save();
-        return $user->fresh();
+        /** @var User $fresh */
+        $fresh = $user->fresh() ?? $user;
+        return $fresh;
     }
 
     public function softDelete(User $user): void

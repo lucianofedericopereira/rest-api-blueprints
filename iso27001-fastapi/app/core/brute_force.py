@@ -26,7 +26,7 @@ _KEY_PREFIX = "brute_force:"
 _local: dict[str, dict[str, float | int]] = {}
 
 
-def _redis_client():  # type: ignore[return]
+def _redis_client() -> object:
     """Return a redis.Redis client or None if unavailable."""
     try:
         import redis as _redis  # type: ignore[import-untyped]

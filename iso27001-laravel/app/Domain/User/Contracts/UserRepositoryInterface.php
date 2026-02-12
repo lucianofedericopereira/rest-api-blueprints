@@ -18,10 +18,17 @@ interface UserRepositoryInterface
 
     public function findByEmail(string $email): ?User;
 
+    /** @return LengthAwarePaginator<User> */
     public function paginate(int $page, int $perPage): LengthAwarePaginator;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function create(array $attributes): User;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function update(User $user, array $attributes): User;
 
     public function softDelete(User $user): void;

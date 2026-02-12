@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Telemetry;
 
+use Illuminate\Support\Facades\Redis;
+
 /**
  * A.17: Error budget tracker — Redis-backed with in-process fallback.
  *
@@ -51,13 +53,10 @@ final class ErrorBudgetTracker
     {
         if ($this->redisAvailable) {
             try {
-                \Illuminate\Support\Facades\Redis::incr(
-                    sprintf(self::KEY_TOTAL, $this->keyPrefix)
-                );
+                $conn = Redis::connection();
+                $conn->incr(sprintf(self::KEY_TOTAL, $this->keyPrefix));
                 if ($statusCode >= 500) {
-                    \Illuminate\Support\Facades\Redis::incr(
-                        sprintf(self::KEY_FAILED, $this->keyPrefix)
-                    );
+                    $conn->incr(sprintf(self::KEY_FAILED, $this->keyPrefix));
                 }
                 return;
             } catch (\Throwable) {
@@ -111,7 +110,8 @@ final class ErrorBudgetTracker
     {
         if ($this->redisAvailable) {
             try {
-                \Illuminate\Support\Facades\Redis::del(
+                $conn = Redis::connection();
+                $conn->del(
                     sprintf(self::KEY_TOTAL, $this->keyPrefix),
                     sprintf(self::KEY_FAILED, $this->keyPrefix),
                 );
@@ -132,12 +132,9 @@ final class ErrorBudgetTracker
     {
         if ($this->redisAvailable) {
             try {
-                $total  = (int) (\Illuminate\Support\Facades\Redis::get(
-                    sprintf(self::KEY_TOTAL, $this->keyPrefix)
-                ) ?? 0);
-                $failed = (int) (\Illuminate\Support\Facades\Redis::get(
-                    sprintf(self::KEY_FAILED, $this->keyPrefix)
-                ) ?? 0);
+                $conn   = Redis::connection();
+                $total  = (int) ($conn->get(sprintf(self::KEY_TOTAL, $this->keyPrefix)) ?? 0);
+                $failed = (int) ($conn->get(sprintf(self::KEY_FAILED, $this->keyPrefix)) ?? 0);
                 return [$total, $failed, 'redis'];
             } catch (\Throwable) {
                 // Fall through to in-process
@@ -154,7 +151,7 @@ final class ErrorBudgetTracker
      */
     private function detectRedis(): bool
     {
-        if (!class_exists(\Illuminate\Support\Facades\Redis::class)) {
+        if (!class_exists(Redis::class)) {
             return false;
         }
 
@@ -164,7 +161,7 @@ final class ErrorBudgetTracker
         }
 
         try {
-            \Illuminate\Support\Facades\Redis::ping();
+            Redis::connection()->ping();
             return true;
         } catch (\Throwable) {
             return false;

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any, Callable
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -40,3 +40,12 @@ def resolve_user(
     if user := repo.get_by_id(user_id):
         return user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+
+def require_role(role: str) -> Callable[..., User]:
+    """Return a FastAPI dependency that enforces a minimum role."""
+    def _check(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role != role:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+        return current_user
+    return _check

@@ -4,29 +4,35 @@ declare(strict_types=1);
 
 namespace App\Logging;
 
+use Monolog\LogRecord;
+use Monolog\Processor\ProcessorInterface;
+
 /**
  * A.12: Monolog processor that injects correlation ID and redacts sensitive fields.
  */
-final class StructuredLogProcessor
+final class StructuredLogProcessor implements ProcessorInterface
 {
     private const REDACTED = [
         'password', 'token', 'secret', 'authorization',
         'api_key', 'credit_card', 'ssn', 'refresh_token',
     ];
 
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
-        // Inject correlation ID from the current request
-        $record['extra']['request_id']   = config('request.id', 'cli');
-        $record['extra']['service']      = config('app.name', 'iso27001-api');
-        $record['extra']['environment']  = config('app.env', 'production');
-
-        // A.12: Redact sensitive fields in the log context
-        $record['context'] = $this->redact($record['context'] ?? []);
-
-        return $record;
+        return $record->with(
+            extra: array_merge($record->extra, [
+                'request_id'  => config('request.id', 'cli'),
+                'service'     => config('app.name', 'iso27001-api'),
+                'environment' => config('app.env', 'production'),
+            ]),
+            context: $this->redact($record->context),
+        );
     }
 
+    /**
+     * @param  array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function redact(array $data): array
     {
         $result = [];

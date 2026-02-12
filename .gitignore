@@ -1,0 +1,20 @@
+# IDE
+.idea/
+.vscode/
+.fleet/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# A.10: Never commit secrets or key material
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+secrets/
+credentials.json

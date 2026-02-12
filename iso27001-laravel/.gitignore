@@ -6,6 +6,8 @@
 /storage/*.key
 /vendor
 .phpunit.result.cache
+.phpunit.cache
+/bootstrap/cache/*.php
 Homestead.json
 Homestead.yaml
 auth.json
@@ -14,3 +16,10 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+# PHPStan / Larastan cache
+.phpstan.cache
+/phpstan-baseline.neon
+# Laravel IDE helper generated stubs (not for VCS)
+/_ide_helper.php
+/_ide_helper_models.php
+/.phpstorm.meta.php

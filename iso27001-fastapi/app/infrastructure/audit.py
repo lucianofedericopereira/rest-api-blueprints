@@ -9,7 +9,7 @@ from app.core.telemetry import logger, get_correlation_id
 from app.domain.users.events import UserCreated, DomainEvent
 
 
-class AuditLog(Base):
+class AuditLog(Base):  # type: ignore[misc]
     """
     A.12: Immutable audit trail entity.
     Stores WHO did WHAT, WHEN, and WHICH resource was affected.
@@ -38,7 +38,7 @@ class AuditService:
         resource_type: str,
         resource_id: str,
         performed_by: str = "system",
-        changes: dict | None = None,
+        changes: dict[str, str] | None = None,
     ) -> None:
         # Use a separate session to ensure audit logs are committed 
         # even if the main transaction fails (best effort)

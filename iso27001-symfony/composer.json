@@ -29,6 +29,7 @@
     "require-dev": {
         "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^11.0",
+        "qossmic/deptrac": "^2.0",
         "symfony/browser-kit": "7.2.*",
         "symfony/css-selector": "7.2.*",
         "symfony/phpunit-bridge": "^7.2"
@@ -50,6 +51,12 @@
         },
         "post-install-cmd": ["@auto-scripts"],
         "post-update-cmd": ["@auto-scripts"]
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true,
+            "symfony/runtime": true
+        }
     },
     "extra": {
         "symfony": {

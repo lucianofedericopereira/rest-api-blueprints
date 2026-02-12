@@ -1,6 +1,6 @@
 import base64
 import os
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # type: ignore[import-not-found]
 from app.config.settings import settings
 
 
@@ -36,4 +36,5 @@ class FieldEncryptor:
         raw = base64.b64decode(ciphertext.encode("ascii"))
         iv = raw[: self._IV_LENGTH]
         ciphertext_with_tag = raw[self._IV_LENGTH :]
-        return self._aesgcm.decrypt(iv, ciphertext_with_tag, None).decode("utf-8")
+        result: bytes = self._aesgcm.decrypt(iv, ciphertext_with_tag, None)
+        return result.decode("utf-8")

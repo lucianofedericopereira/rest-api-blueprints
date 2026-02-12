@@ -10,6 +10,9 @@ namespace App\Infrastructure\Audit;
  */
 final readonly class AuditEntry
 {
+    /**
+     * @param array<string, mixed> $changes
+     */
     public function __construct(
         public string $action,
         public string $performedBy,

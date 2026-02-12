@@ -1,6 +1,8 @@
 import uuid
 import time
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
+from starlette.types import ASGIApp
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.core.telemetry import request_id_ctx, logger
@@ -16,7 +18,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
     Propagates through logs, events, downstream calls, and responses.
     Also extracts the AWS X-Ray trace ID when present.
     """
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         # Preserve client-provided ID or generate new one
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         request_id_ctx.set(request_id)
@@ -69,11 +71,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """
     A.17: Rate limiting middleware to protect availability.
     """
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.limiter = RedisRateLimiter()
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         try:
             await self.limiter.check(request)
         except Exception as e:
@@ -92,7 +94,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     Mirrors the Symfony SecurityHeaderSubscriber and Laravel SecurityHeadersMiddleware.
     """
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-Frame-Options"] = "DENY"

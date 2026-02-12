@@ -2,7 +2,7 @@
         setup-php setup-python setup-laravel \
         test-php test-python test-laravel \
         migration-php migration-laravel \
-        db-reset check-security check-static clean
+        db-reset check-security check-static check-layers check-rules clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -30,9 +30,10 @@ setup-php: ## Install Symfony PHP dependencies and generate JWT keys
 	cd iso27001-symfony && composer install
 	cd iso27001-symfony && chmod +x jwt_setup.sh && ./jwt_setup.sh
 
-setup-laravel: ## Install Laravel PHP dependencies and generate app key
+setup-laravel: ## Install Laravel PHP dependencies, generate app key, and generate IDE helper stubs
 	cd iso27001-laravel && composer install
 	cd iso27001-laravel && php artisan key:generate
+	cd iso27001-laravel && php artisan ide-helper:generate
 
 setup-python: ## Install FastAPI Python dependencies
 	cd iso27001-fastapi && pip install -e .[dev]
@@ -75,6 +76,14 @@ check-static: ## Run static analysis on all stacks (PHPStan level 8 + mypy stric
 	cd iso27001-symfony && vendor/bin/phpstan analyse --no-progress
 	cd iso27001-laravel && vendor/bin/phpstan analyse --no-progress
 	cd iso27001-fastapi && mypy app
+
+check-layers: ## Enforce DDD layer boundaries (deptrac PHP + import-linter Python)
+	cd iso27001-symfony && vendor/bin/deptrac analyse
+	cd iso27001-laravel && vendor/bin/deptrac analyse
+	cd iso27001-fastapi && lint-imports
+
+check-rules: ## Verify every rule in rules/iso27001-rules.yaml maps to an existing file
+	@python3 rules/check_rules.py
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 

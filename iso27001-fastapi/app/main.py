@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import Request as StarletteRequest
 
 from app.config.settings import settings
 from app.core.middleware import CorrelationIdMiddleware, RateLimitMiddleware, SecurityHeadersMiddleware
@@ -44,14 +45,16 @@ def create_app() -> FastAPI:
     app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
     # Telemetry
-    app.add_route("/metrics", get_metrics)
+    async def metrics_endpoint(request: StarletteRequest) -> Response:
+        return get_metrics()
+    app.add_route("/metrics", metrics_endpoint)
 
     # Event Listeners
     event_bus.subscribe(UserCreated, audit_listener)
 
     # Global Exception Handler (A.14)
     @app.exception_handler(APIError)
-    async def api_error_handler(request: Request, exc: APIError):
+    async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
             content=create_error_response(

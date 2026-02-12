@@ -41,8 +41,9 @@ final class RouteServiceProvider extends ServiceProvider
 
         // Write operations: 30 req/min per authenticated user token
         RateLimiter::for('write', function (Request $request) {
+            $user = $request->user();
             return Limit::perMinute(30)->by(
-                $request->user()?->id ?? $request->ip()
+                $user !== null ? $user->id : $request->ip()
             );
         });
     }

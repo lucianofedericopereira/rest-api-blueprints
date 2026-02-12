@@ -23,6 +23,7 @@ dev = [
     "httpx>=0.26.0",
     "mypy>=1.8.0",
     "types-passlib>=1.7.0",
+    "import-linter>=2.1",
 ]
 aws = [
     "boto3>=1.34",

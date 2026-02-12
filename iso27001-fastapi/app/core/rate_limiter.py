@@ -52,7 +52,7 @@ def _local_check(key: str, limit: int, window: int) -> bool:
     return True
 
 
-def _redis_client():  # type: ignore[return]
+def _redis_client() -> object:
     try:
         import redis as _redis  # type: ignore[import-untyped]
         from app.config.settings import settings

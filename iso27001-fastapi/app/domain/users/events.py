@@ -15,7 +15,7 @@ class DomainEvent(_BaseDomainEvent):
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def to_log_context(self) -> dict:
+    def to_log_context(self) -> dict[str, str]:
         return {
             "event_type": self.__class__.__name__,
             "event_id": self.event_id,

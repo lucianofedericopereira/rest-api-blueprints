@@ -1,0 +1,260 @@
+# ISO 27001 Rule Registry
+#
+# Single source of truth for every security control implemented across the three
+# reference projects. Each rule entry records:
+#   - control   : ISO 27001 Annex A clause
+#   - title     : short human name
+#   - policy    : what must be true in every implementation
+#   - fastapi   : file(s) relative to iso27001-fastapi/
+#   - symfony   : file(s) relative to iso27001-symfony/
+#   - laravel   : file(s) relative to iso27001-laravel/
+#
+# CI reads this file to verify that every listed file exists on disk.
+# Removing or renaming an implementation file without updating this registry
+# breaks the CI `check-rules` step.
+
+rules:
+
+  # ── A.9 Access Control ──────────────────────────────────────────────────────
+
+  - id: A9-JWT-AUTH
+    control: "A.9"
+    title: "JWT authentication — access + refresh tokens"
+    policy: >
+      Every implementation must issue short-lived access tokens (≤30 min) and
+      long-lived refresh tokens (≤7 days). Refresh must rotate (old token
+      revoked on issue).
+    fastapi:
+      - app/api/v1/auth.py
+    symfony:
+      - src/Controller/Api/V1/AuthController.php
+    laravel:
+      - app/Http/Controllers/Api/V1/AuthController.php
+
+  - id: A9-RBAC
+    control: "A.9"
+    title: "Role-based access control (admin > manager > analyst > viewer)"
+    policy: >
+      Every route that is not public must enforce a minimum role.
+      Roles must form a strict hierarchy; a higher role satisfies a lower one.
+    fastapi:
+      - app/api/deps.py
+    symfony:
+      - config/packages/security.yaml
+    laravel:
+      - app/Http/Middleware/RoleMiddleware.php
+
+  - id: A9-RATE-LIMIT
+    control: "A.9"
+    title: "Tiered rate limiting (auth 10/min · write 30/min · global 100/min)"
+    policy: >
+      Auth endpoints: max 10 requests/min per IP.
+      Write endpoints (POST/PUT/PATCH/DELETE): max 30 requests/min per IP.
+      All other endpoints: max 100 requests/min per IP.
+      Must use Redis when available with in-process fallback.
+    fastapi:
+      - app/core/rate_limiter.py
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/RateLimitSubscriber.php
+      - config/packages/rate_limiter.yaml
+    laravel:
+      - app/Providers/RouteServiceProvider.php
+
+  - id: A9-BRUTE-FORCE
+    control: "A.9"
+    title: "Brute-force lockout (5 failures → 15 min lock)"
+    policy: >
+      After 5 consecutive authentication failures for the same identifier,
+      the account must be locked for 15 minutes. Lock state must be stored in
+      Redis when available (cross-process) with in-process fallback.
+    fastapi:
+      - app/core/brute_force.py
+    symfony:
+      - src/EventSubscriber/BruteForceSubscriber.php
+    laravel:
+      - app/Infrastructure/Security/BruteForceGuard.php
+
+  # ── A.10 Cryptography ───────────────────────────────────────────────────────
+
+  - id: A10-FIELD-ENCRYPTION
+    control: "A.10"
+    title: "AES-256-GCM field-level encryption for PII at rest"
+    policy: >
+      Sensitive fields (email, name) must be encrypted at rest using
+      AES-256-GCM with a 32-byte key, 12-byte IV, and 16-byte auth tag.
+      The encryption key must come from an environment variable, never hardcoded.
+    fastapi:
+      - app/infrastructure/encryption.py
+    symfony:
+      - src/Infrastructure/Encryption/FieldEncryptor.php
+    laravel:
+      - app/Infrastructure/Encryption/FieldEncryptor.php
+
+  - id: A10-PASSWORD-HASHING
+    control: "A.10"
+    title: "bcrypt / Argon2 password hashing"
+    policy: >
+      Passwords must never be stored in plaintext. Use bcrypt (cost ≥12) or
+      Argon2id. Verification must use a constant-time comparison.
+    fastapi:
+      - app/domain/users/service.py
+    symfony:
+      - config/packages/security.yaml
+    laravel:
+      - app/Domain/User/Services/UserService.php
+
+  - id: A10-SECURITY-HEADERS
+    control: "A.10"
+    title: "HSTS, X-Frame-Options, CSP, X-Content-Type-Options on every response"
+    policy: >
+      Every HTTP response must include:
+        Strict-Transport-Security: max-age≥31536000; includeSubDomains
+        X-Frame-Options: DENY
+        X-Content-Type-Options: nosniff
+        Content-Security-Policy: default-src 'none'
+    fastapi:
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/SecurityHeaderSubscriber.php
+    laravel:
+      - app/Http/Middleware/SecurityHeadersMiddleware.php
+
+  # ── A.12 Operations Security ────────────────────────────────────────────────
+
+  - id: A12-STRUCTURED-LOGGING
+    control: "A.12"
+    title: "Structured JSON logging with sensitive-field redaction"
+    policy: >
+      Every log line must be valid JSON with the top-level fields:
+        timestamp, level, message, service, environment, request_id, context.
+      The fields password, token, secret, authorization, cvv, pan must never
+      appear in log output (redacted before emission).
+    fastapi:
+      - app/core/telemetry.py
+    symfony:
+      - src/Logging/StructuredJsonFormatter.php
+      - src/Logging/StructuredProcessor.php
+    laravel:
+      - app/Logging/StructuredJsonFormatter.php
+      - app/Logging/StructuredLogProcessor.php
+
+  - id: A12-CORRELATION-ID
+    control: "A.12"
+    title: "Correlation ID (X-Request-ID) propagated through logs and responses"
+    policy: >
+      Every request must receive a UUID correlation ID. If X-Request-ID is
+      present in the request it must be used; otherwise one must be generated.
+      The ID must appear in every log line for that request and in the response.
+    fastapi:
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/CorrelationIdSubscriber.php
+    laravel:
+      - app/Http/Middleware/CorrelationIdMiddleware.php
+
+  - id: A12-AUDIT-LOG
+    control: "A.12"
+    title: "Immutable append-only audit_logs table"
+    policy: >
+      Every create / update / delete operation on domain entities must produce
+      an immutable audit record. Records must never be updated or deleted.
+      Minimum fields: id, action, performed_by, resource_type, resource_id,
+      changes (JSON), ip_address, correlation_id, created_at.
+    fastapi:
+      - app/infrastructure/audit.py
+      - app/domain/users/service.py
+    symfony:
+      - src/Audit/AuditService.php
+    laravel:
+      - app/Infrastructure/Audit/AuditService.php
+      - app/Infrastructure/Audit/AuditEntry.php
+
+  # ── A.14 Secure Development ─────────────────────────────────────────────────
+
+  - id: A14-INPUT-VALIDATION
+    control: "A.14"
+    title: "Input validation on all incoming payloads"
+    policy: >
+      All user-supplied input must be validated before reaching business logic.
+      Use the framework's native validation layer (Pydantic v2, Symfony Validator,
+      Laravel FormRequest). No raw array access without prior validation.
+    fastapi:
+      - app/api/v1/users.py
+    symfony:
+      - src/Domain/User/DTO/CreateUserRequest.php
+    laravel:
+      - app/Http/Requests/CreateUserRequest.php
+
+  - id: A14-STATIC-ANALYSIS
+    control: "A.14"
+    title: "Static analysis at maximum strictness in CI"
+    policy: >
+      Python: mypy --strict must pass with zero errors.
+      PHP: PHPStan level 8 must pass with zero errors.
+      Both must run on every CI push and pull request.
+    fastapi:
+      - pyproject.toml
+    symfony:
+      - phpstan.neon
+    laravel:
+      - phpstan.neon
+
+  - id: A14-NO-STACK-TRACES
+    control: "A.14"
+    title: "No stack traces or internal details exposed to API clients"
+    policy: >
+      Error responses must use a fixed shape { code, message } with no
+      exception class names, file paths, or stack traces. Stack traces must
+      only appear in logs (non-production) or be fully suppressed (production).
+    fastapi:
+      - app/main.py
+    symfony:
+      - src/EventListener/ApiExceptionListener.php
+    laravel:
+      - app/Exceptions/Handler.php
+
+  # ── A.17 Business Continuity ────────────────────────────────────────────────
+
+  - id: A17-HEALTH-CHECKS
+    control: "A.17"
+    title: "Liveness, readiness, and detailed health checks"
+    policy: >
+      /health/live   — returns 200 if the process is alive (no dependencies checked).
+      /health/ready  — returns 200 only if DB and cache are reachable.
+      /health/detail — returns full component status; restricted to admin role.
+    fastapi:
+      - app/api/v1/health.py
+    symfony:
+      - src/Controller/Api/V1/HealthController.php
+    laravel:
+      - app/Http/Controllers/Api/V1/HealthController.php
+
+  - id: A17-ERROR-BUDGET
+    control: "A.17"
+    title: "Error budget tracker (99.9% SLA, 5xx deducts budget)"
+    policy: >
+      Every response must be recorded in the error budget tracker.
+      5xx responses deduct from the rolling budget. The /health/detail
+      endpoint must include the current budget snapshot.
+      Must use Redis when available with in-process fallback.
+    fastapi:
+      - app/infrastructure/quality_score.py
+      - app/core/middleware.py
+    symfony:
+      - src/Infrastructure/Telemetry/ErrorBudgetTracker.php
+    laravel:
+      - app/Infrastructure/Telemetry/ErrorBudgetTracker.php
+
+  - id: A17-QUALITY-SCORE
+    control: "A.17"
+    title: "Quality score calculator (security 40% · integrity 20% · reliability 15% · auditability 15% · performance 10%)"
+    policy: >
+      A composite quality score must be computed from weighted sub-scores.
+      Weights must sum to 100%. Score must be exposed on /health/detail.
+    fastapi:
+      - app/infrastructure/quality_score.py
+    symfony:
+      - src/Infrastructure/Telemetry/QualityScoreCalculator.php
+    laravel:
+      - app/Infrastructure/Telemetry/QualityScoreCalculator.php

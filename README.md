@@ -11,6 +11,8 @@ and defensive security patterns in **PHP (Symfony 7.2 / Laravel 12)** and
 iso27001-fastapi/    FastAPI (Python 3.11)
 iso27001-symfony/    Symfony 7.2 (PHP 8.2)
 iso27001-laravel/    Laravel 12 (PHP 8.2)
+rules/               Cross-project ISO 27001 rule registry + validator
+.pre-commit-config.yaml   Root-level pre-commit hooks (secret scan, lint, format)
 ```
 
 ---
@@ -70,6 +72,8 @@ iso27001-laravel/    Laravel 12 (PHP 8.2)
 | UUID primary keys | ✓ | ✓ | ✓ |
 | Docker + docker-compose | ✓ | ✓ | ✓ |
 | CI (GitHub Actions) | ✓ | ✓ | ✓ |
+| DDD layer boundary enforcement (deptrac / import-linter) | ✓ | ✓ | ✓ |
+| Cross-project ISO 27001 rule registry | ✓ | ✓ | ✓ |
 
 ---
 
@@ -125,6 +129,63 @@ make db-reset           # Drop + recreate + migrate all databases
 
 make check-security     # composer audit (both PHP) + pip-audit (Python)
 make check-static       # PHPStan level 8 (both PHP) + mypy strict (Python)
+make check-layers       # DDD layer boundaries: deptrac (PHP) + import-linter (Python)
+make check-rules        # Verify every ISO 27001 rule maps to an existing file
+```
+
+---
+
+## Architecture Enforcement
+
+Rules and boundaries are enforced by tooling, not by review. Three mechanisms
+keep all three codebases aligned without sharing code.
+
+### ISO 27001 Rule Registry (`rules/iso27001-rules.yaml`)
+
+Machine-readable map of every security control to its implementation file in
+each project. 16 rules covering A.9 through A.17. CI runs `check_rules.py` on
+every push — if a file is renamed or deleted without updating the registry, the
+build fails.
+
+```bash
+make check-rules   # exits 1 and lists any missing files
+```
+
+### DDD Layer Boundaries
+
+Prevents architectural drift: Domain must never import Infrastructure, etc.
+
+| Tool | Projects | Config |
+|------|----------|--------|
+| [deptrac](https://github.com/qossmic/deptrac) | Symfony, Laravel | `deptrac.yaml` per project |
+| [import-linter](https://import-linter.readthedocs.io/) | FastAPI | `iso27001-fastapi/.importlinter` |
+
+```bash
+make check-layers  # deptrac (both PHP) + lint-imports (Python)
+```
+
+Layer rules (identical intent across all three stacks):
+
+```
+Api / Http  →  Application  →  Domain      (top-down only)
+Infrastructure  →  Domain                   (implements contracts)
+Domain  ←  Infrastructure                   (FORBIDDEN)
+```
+
+### Pre-commit Hooks (`.pre-commit-config.yaml`)
+
+Root-level hooks covering all three projects on every commit:
+
+| Hook | Covers | Purpose |
+|------|--------|---------|
+| gitleaks | all | A.10: secret scanning |
+| ruff + ruff-format | FastAPI | Python linting + formatting |
+| pint | Laravel | PHP formatting |
+| phpstan | Laravel, Symfony | Static analysis gate |
+| detect-private-key | all | A.10: blocks key material |
+
+```bash
+pip install pre-commit && pre-commit install   # one-time setup
 ```
 
 ---

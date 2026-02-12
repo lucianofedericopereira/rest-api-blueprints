@@ -29,10 +29,10 @@ _CW_NAMESPACE = os.getenv("AWS_CLOUDWATCH_NAMESPACE", "ISO27001/API")
 _AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "eu-west-1")
 
 
-def _cloudwatch_client():
+def _cloudwatch_client() -> object:
     """Return a boto3 CloudWatch client, or None if boto3 is not installed."""
     try:
-        import boto3  # type: ignore[import]
+        import boto3  # type: ignore[import-untyped]
         return boto3.client("cloudwatch", region_name=_AWS_REGION)
     except ImportError:
         logger.debug("boto3 not installed — CloudWatch metrics disabled")
@@ -96,7 +96,7 @@ class CloudWatchEmitter:
         name: str,
         value: float,
         unit: str,
-        extra_dimensions: Optional[list] = None,
+        extra_dimensions: Optional[list[dict[str, str]]] = None,
     ) -> None:
         if self._cw is None:
             return
@@ -138,9 +138,9 @@ class XRayTracer:
     HEADER = "X-Amzn-Trace-Id"
 
     @staticmethod
-    def extract_trace_id(headers: dict) -> Optional[str]:
+    def extract_trace_id(headers: dict[str, str]) -> Optional[str]:
         """Extract the X-Ray trace ID from request headers."""
-        raw = headers.get(XRayTracer.HEADER) or headers.get(XRayTracer.HEADER.lower())
+        raw: str | None = headers.get(XRayTracer.HEADER) or headers.get(XRayTracer.HEADER.lower())
         if not raw:
             return None
         # Format: Root=1-xxxxxxxx-xxxxxxxxxxxxxxxxxxxx;Parent=xxxx;Sampled=1
@@ -153,7 +153,7 @@ class XRayTracer:
     def begin_segment(name: str, trace_id: Optional[str] = None) -> None:
         """Start an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped]
             xray_recorder.begin_segment(name, traceid=trace_id)
         except ImportError:
             pass
@@ -162,7 +162,7 @@ class XRayTracer:
     def end_segment() -> None:
         """End an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped]
             xray_recorder.end_segment()
         except ImportError:
             pass

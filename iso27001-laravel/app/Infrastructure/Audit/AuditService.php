@@ -16,6 +16,9 @@ use Illuminate\Support\Str;
  */
 final class AuditService
 {
+    /**
+     * @param array<string, mixed> $changes
+     */
     public function record(
         string $action,
         string $performedBy,
@@ -23,6 +26,8 @@ final class AuditService
         string $resourceId,
         array $changes = [],
     ): void {
+        $correlationId = Request::header('X-Request-ID') ?? 'system';
+
         $entry = new AuditEntry(
             action:        $action,
             performedBy:   $performedBy,
@@ -30,7 +35,7 @@ final class AuditService
             resourceId:    $resourceId,
             changes:       $changes,
             ipAddress:     Request::ip(),
-            correlationId: Request::header('X-Request-ID', 'system'),
+            correlationId: $correlationId,
         );
 
         DB::table('audit_logs')->insert([

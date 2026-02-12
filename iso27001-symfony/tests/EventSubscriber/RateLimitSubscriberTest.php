@@ -19,16 +19,19 @@ class RateLimitSubscriberTest extends TestCase
 {
     private RateLimiterFactory|MockObject $anonymousApiLimiter;
     private RateLimiterFactory|MockObject $loginIpLimiter;
+    private RateLimiterFactory|MockObject $writeApiLimiter;
     private RateLimitSubscriber $subscriber;
 
     protected function setUp(): void
     {
         $this->anonymousApiLimiter = $this->createMock(RateLimiterFactory::class);
-        $this->loginIpLimiter = $this->createMock(RateLimiterFactory::class);
+        $this->loginIpLimiter      = $this->createMock(RateLimiterFactory::class);
+        $this->writeApiLimiter     = $this->createMock(RateLimiterFactory::class);
 
         $this->subscriber = new RateLimitSubscriber(
             $this->anonymousApiLimiter,
-            $this->loginIpLimiter
+            $this->loginIpLimiter,
+            $this->writeApiLimiter,
         );
     }
 
@@ -92,6 +95,27 @@ class RateLimitSubscriberTest extends TestCase
         $this->subscriber->onKernelRequest($event);
     }
 
+    public function testWriteEndpointUsesWriteLimiter(): void
+    {
+        $request = Request::create('/api/v1/users', 'POST');
+        $event   = $this->createRequestEvent($request);
+
+        $limiter = $this->createMock(LimiterInterface::class);
+        $limit   = $this->createMock(RateLimit::class);
+
+        $this->writeApiLimiter->expects($this->once())
+            ->method('create')
+            ->willReturn($limiter);
+
+        $limiter->method('consume')->willReturn($limit);
+        $limit->method('isAccepted')->willReturn(true);
+        $limit->method('getRemainingTokens')->willReturn(29);
+
+        $this->subscriber->onKernelRequest($event);
+
+        $this->assertEquals(29, $request->attributes->get('rate_limit_remaining'));
+    }
+
     public function testNonApiRequestIgnored(): void
     {
         $request = Request::create('/health', 'GET');
@@ -99,6 +123,7 @@ class RateLimitSubscriberTest extends TestCase
 
         $this->anonymousApiLimiter->expects($this->never())->method('create');
         $this->loginIpLimiter->expects($this->never())->method('create');
+        $this->writeApiLimiter->expects($this->never())->method('create');
 
         $this->subscriber->onKernelRequest($event);
     }

@@ -45,7 +45,7 @@ class SloAlert:
             or self.client_error_spike
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, bool]:
         return {
             "any_breach": self.any_breach(),
             "p95_latency_breached": self.p95_latency_breached,
@@ -80,7 +80,7 @@ class QualityScore:
         """True if this score meets the production deployment gate."""
         return self.composite() >= PRODUCTION_GATE
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         c = self.composite()
         return {
             "composite": round(c, 4),

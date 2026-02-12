@@ -26,8 +26,8 @@ class UserService:
         saved_user = self.repo.save(user)
         
         # A.12: Emit event for audit trail (never log raw email)
-        email_hash = hashlib.sha256(saved_user.email.encode()).hexdigest()
-        event = UserCreated(user_id=saved_user.id, email_hash=email_hash, role=saved_user.role)
+        email_hash = hashlib.sha256(str(saved_user.email).encode()).hexdigest()
+        event = UserCreated(user_id=str(saved_user.id), email_hash=email_hash, role=str(saved_user.role))
         self.bus.publish(event)
         
         return saved_user
@@ -39,10 +39,10 @@ class UserService:
         if request.email and request.email != user.email:
             if self.repo.exists_by_email(request.email):
                 raise ConflictError("Email already exists")
-            user.email = request.email
-        
+            user.email = request.email  # type: ignore[assignment]
+
         if request.full_name:
-            user.full_name = request.full_name
+            user.full_name = request.full_name  # type: ignore[assignment]
             
         return self.repo.save(user)
 

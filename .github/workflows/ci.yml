@@ -7,6 +7,29 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
+
+  secret-scan:
+    name: Secret scan (A.10 — gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rule-registry:
+    name: Rule registry check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - run: python3 rules/check_rules.py
+
   symfony-tests:
     name: Symfony (PHP 8.2)
     runs-on: ubuntu-latest
@@ -39,6 +62,9 @@ jobs:
       - name: Static Analysis (A.14)
         run: vendor/bin/phpstan analyse --no-progress
 
+      - name: Layer boundaries (A.14 — deptrac)
+        run: vendor/bin/deptrac analyse
+
       - name: Run Tests
         run: php bin/phpunit
         env:
@@ -69,6 +95,9 @@ jobs:
 
       - name: Static Analysis (A.14)
         run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Layer boundaries (A.14 — deptrac)
+        run: vendor/bin/deptrac analyse
 
       - name: Run Tests
         run: php artisan test
@@ -104,6 +133,9 @@ jobs:
 
       - name: Static Analysis (A.14)
         run: mypy app
+
+      - name: Layer boundaries (A.14 — import-linter)
+        run: lint-imports
 
       - name: Run Tests
         run: pytest

@@ -1,0 +1,77 @@
+# deptrac — DDD layer boundary enforcement (Laravel)
+#
+# Enforces the four-layer DDD architecture. The allowed dependency direction is:
+#
+#   Http → Application → Domain       (top-down only)
+#   Infrastructure → Domain           (infra implements domain contracts)
+#   Infrastructure ← Domain           (FORBIDDEN: domain must not import infra)
+#
+# Run: vendor/bin/deptrac analyse
+# CI:  make check-layers
+
+deptrac:
+  paths:
+    - app
+
+  layers:
+
+    - name: Domain
+      collectors:
+        - type: directory
+          value: app/Domain/.*/Contracts/.*
+        - type: directory
+          value: app/Domain/.*/DTOs/.*
+        - type: directory
+          value: app/Domain/.*/Events/.*
+        - type: directory
+          value: app/Domain/.*/Models/.*
+
+    - name: Application
+      collectors:
+        - type: directory
+          value: app/Domain/.*/Services/.*
+        - type: directory
+          value: app/Listeners/.*
+
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: app/Infrastructure/.*
+        - type: directory
+          value: app/Logging/.*
+
+    - name: Http
+      collectors:
+        - type: directory
+          value: app/Http/.*
+        - type: directory
+          value: app/Exceptions/.*
+        - type: directory
+          value: app/Providers/.*
+
+  ruleset:
+    Domain:
+      # Domain is the innermost layer — no outward dependencies
+      - ~Application
+      - ~Infrastructure
+      - ~Http
+
+    Application:
+      # Services orchestrate domain objects; may not touch Http or Infrastructure directly
+      - Domain
+
+    Infrastructure:
+      # Repositories, encryption, telemetry implement domain contracts
+      - Domain
+
+    Http:
+      # Controllers, middleware, requests sit at the outer edge
+      - Domain
+      - Application
+      - Infrastructure
+
+  skip_violations:
+    # Laravel framework base classes are not project layers
+    App\Http\Kernel: ~
+    App\Providers\AppServiceProvider: ~
+    App\Providers\RouteServiceProvider: ~

@@ -11,9 +11,9 @@ router = APIRouter()
 def register_user(
     request: CreateUserRequest,
     service: UserService = Depends(get_user_service)
-):
+) -> UserResponse:
     """Register a new user."""
-    return service.create_user(request)
+    return service.create_user(request)  # type: ignore[return-value]
 
 @router.get("/", response_model=List[UserResponse])
 def list_users(
@@ -21,26 +21,26 @@ def list_users(
     limit: int = Query(20, ge=1, le=100),
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
-):
+) -> list[UserResponse]:
     """List users (Admin only)."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return service.list_users(skip, limit)
+    return service.list_users(skip, limit)  # type: ignore[return-value]
 
 @router.get("/me", response_model=UserResponse)
-def read_users_me(current_user: User = Depends(get_current_user)):
+def read_users_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     """Get current authenticated user profile."""
-    return current_user
+    return current_user  # type: ignore[return-value]
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user: User = Depends(resolve_user),
     current_user: User = Depends(get_current_user),
-):
+) -> UserResponse:
     """Get a specific user (Owner or Admin)."""
     if current_user.role != "admin" and current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return user
+    return user  # type: ignore[return-value]
 
 @router.patch("/{user_id}", response_model=UserResponse)
 def update_user(
@@ -48,18 +48,18 @@ def update_user(
     user: User = Depends(resolve_user),
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
-):
+) -> UserResponse:
     """Update user profile (Owner or Admin)."""
     if current_user.role != "admin" and current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return service.update_user(user, request)
+    return service.update_user(user, request)  # type: ignore[return-value]
 
 @router.delete("/{user_id}", status_code=204)
 def delete_user(
     user: User = Depends(resolve_user),
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
-):
+) -> None:
     """Delete a user (Admin only)."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")

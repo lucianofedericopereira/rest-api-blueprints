@@ -30,7 +30,7 @@ def login(
     repo = UserRepository(db)
     user = repo.get_by_email(email)
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, str(user.hashed_password)):
         brute_force_guard.record_failure(email)
         logger.warning("auth.failed", email=email)
         raise AuthenticationError("Invalid credentials")
@@ -39,10 +39,10 @@ def login(
         raise AuthenticationError("User inactive")
 
     brute_force_guard.clear(email)
-    logger.audit("auth.login", user_id=user.id)
+    logger.audit("auth.login", user_id=str(user.id))
     return create_token_pair(
-        user_id=user.id,
-        role=user.role,
+        user_id=str(user.id),
+        role=str(user.role),
         access_jti=str(uuid.uuid4()),
         refresh_jti=str(uuid.uuid4()),
     )
@@ -64,10 +64,10 @@ def refresh(
     if user is None or not user.is_active:
         raise AuthenticationError("User not found or inactive")
 
-    logger.audit("auth.refresh", user_id=user.id)
+    logger.audit("auth.refresh", user_id=str(user.id))
     return create_token_pair(
-        user_id=user.id,
-        role=user.role,
+        user_id=str(user.id),
+        role=str(user.role),
         access_jti=str(uuid.uuid4()),
         refresh_jti=str(uuid.uuid4()),
     )

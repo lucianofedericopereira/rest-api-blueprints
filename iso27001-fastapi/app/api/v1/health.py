@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.deps import require_role
 from app.core.database import get_db
+from app.domain.users.models import User
 from app.core.metrics import SLO_P95_LATENCY_MS, SLO_P99_LATENCY_MS
 from app.infrastructure.error_budget import error_budget
 from app.infrastructure.quality_score import QualityScoreCalculator
@@ -14,15 +15,15 @@ router = APIRouter()
 
 
 @router.get("/health", tags=["health"])
-async def liveness():
+async def liveness() -> dict[str, str]:
     """A.17: Basic liveness — is the process running?"""
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @router.get("/health/ready", tags=["health"])
-def readiness(db: Session = Depends(get_db)):
+def readiness(db: Session = Depends(get_db)) -> JSONResponse:
     """A.17: Readiness — can it serve traffic?"""
-    checks: dict = {}
+    checks: dict[str, object] = {}
     overall = True
 
     # A.17: Real DB liveness ping
@@ -47,7 +48,7 @@ def readiness(db: Session = Depends(get_db)):
 
 
 @router.get("/health/detailed", tags=["health"])
-async def detailed(_: dict = Depends(require_role("admin"))):
+async def detailed(_: User = Depends(require_role("admin"))) -> JSONResponse:
     """
     A.17: Detailed health — error budget, SLO alerts, and quality score.
     Requires admin role.
