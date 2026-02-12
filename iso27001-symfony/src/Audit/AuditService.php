@@ -19,6 +19,7 @@ final readonly class AuditService
         private RequestStack $requestStack,
     ) {}
 
+    /** @param array<string, mixed> $changes */
     public function record(
         string $action,
         string $performedBy,

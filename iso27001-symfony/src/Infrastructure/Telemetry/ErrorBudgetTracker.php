@@ -152,7 +152,7 @@ final class ErrorBudgetTracker
         }
 
         $url = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
-        if ($url === null || $url === '') {
+        if ($url === null) {
             return null;
         }
 

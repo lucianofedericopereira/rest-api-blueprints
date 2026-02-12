@@ -111,7 +111,6 @@ final class CloudWatchEmitter
 
     private function buildClient(): ?object
     {
-        /** @var class-string $fqcn */
         $fqcn = 'Aws\CloudWatch\CloudWatchClient';
 
         if (!class_exists($fqcn)) {

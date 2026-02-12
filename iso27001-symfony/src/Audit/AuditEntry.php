@@ -11,6 +11,7 @@ final readonly class AuditEntry
         public string $performedBy,
         public string $resourceType,
         public string $resourceId,
+        /** @var array<string, mixed> */
         public array $changes,
         public ?string $ipAddress,
         public string $correlationId,

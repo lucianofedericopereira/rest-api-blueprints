@@ -48,7 +48,11 @@ final class StructuredJsonFormatter extends JsonFormatter
         return $this->toJson($entry, true) . "\n";
     }
 
-    /** Merge Monolog context + extra (minus fields already promoted to top-level). */
+    /**
+     * Merge Monolog context + extra (minus fields already promoted to top-level).
+     *
+     * @return array<string, mixed>|null
+     */
     private function mergeContext(LogRecord $record): ?array
     {
         $promoted = ['service', 'environment', 'request_id'];

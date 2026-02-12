@@ -6,7 +6,7 @@ namespace App\Controller\Api\V1;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -34,16 +34,17 @@ final class MetricsController extends AbstractController
     public function __invoke(): Response
     {
         // If prometheus_client_php is installed, render its registry
-        if (class_exists(\Prometheus\CollectorRegistry::class)) {
-            /** @phpstan-ignore-next-line */
-            $renderer = new \Prometheus\RenderTextFormat();
-            /** @phpstan-ignore-next-line */
-            $registry = \Prometheus\CollectorRegistry::getDefault();
-            return new Response(
-                $renderer->render($registry->getMetricFamilySamples()),
-                Response::HTTP_OK,
-                ['Content-Type' => \Prometheus\RenderTextFormat::MIME_TYPE],
-            );
+        if (class_exists('Prometheus\CollectorRegistry')) {
+            $rendererClass  = 'Prometheus\RenderTextFormat';
+            $registryClass  = 'Prometheus\CollectorRegistry';
+            /** @var object $renderer */
+            $renderer = new $rendererClass();
+            /** @var object $registry */
+            $registry = $registryClass::getDefault();
+            /** @var string $output */
+            $output = $renderer->render($registry->getMetricFamilySamples()); // @phpstan-ignore-line
+            $mime   = constant($rendererClass . '::MIME_TYPE');
+            return new Response((string) $output, Response::HTTP_OK, ['Content-Type' => (string) $mime]);
         }
 
         // Graceful stub — tells scrapers the endpoint exists but SDK is absent

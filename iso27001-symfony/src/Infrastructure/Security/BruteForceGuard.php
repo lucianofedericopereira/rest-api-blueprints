@@ -26,7 +26,7 @@ final class BruteForceGuard
     private const LOCKOUT_TTL  = 900; // 15 minutes
     private const KEY_PREFIX   = 'brute_force:';
 
-    /** In-process fallback (single-process dev/test) */
+    /** @var array<string, string> In-process fallback (single-process dev/test) */
     private array $local = [];
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ final class BruteForceGuard
             return null;
         }
         $url = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
-        if ($url === null || $url === '') {
+        if ($url === null) {
             return null;
         }
         try {

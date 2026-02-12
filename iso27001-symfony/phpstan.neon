@@ -10,5 +10,4 @@ parameters:
     excludePaths:
         - src/Kernel.php
     ignoreErrors: []
-    checkMissingIterableValueType: false
     reportUnmatchedIgnoredErrors: false

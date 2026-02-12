@@ -11,6 +11,8 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * Doctrine implementation of UserRepositoryInterface.
  * A.12: only returns non-deleted users by default (soft-delete filter).
+ *
+ * @extends ServiceEntityRepository<User>
  */
 final class UserRepository extends ServiceEntityRepository implements UserRepositoryInterface
 {

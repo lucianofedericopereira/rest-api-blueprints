@@ -15,7 +15,7 @@ final class MetricsCollector
     /** @var array<string, int> */
     private array $counters = [];
 
-    /** @var array<string, float[]> */
+    /** @var array<string, list<float>> @phpstan-ignore property.onlyWritten */
     private array $histograms = [];
 
     public function __construct(private readonly LoggerInterface $logger) {}

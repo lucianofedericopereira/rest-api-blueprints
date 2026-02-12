@@ -41,6 +41,10 @@ final readonly class StructuredProcessor implements ProcessorInterface
         return $record->with(context: $context);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function redact(array $data): array
     {
         $result = [];

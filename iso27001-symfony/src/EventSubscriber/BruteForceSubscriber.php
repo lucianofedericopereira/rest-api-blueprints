@@ -71,6 +71,9 @@ final class BruteForceSubscriber implements EventSubscriberInterface
     public function onAuthFailure(AuthenticationFailureEvent $event): void
     {
         $request = $event->getRequest();
+        if ($request === null) {
+            return;
+        }
         try {
             $email = (string) ($request->toArray()['email'] ?? '');
         } catch (\Throwable) {
