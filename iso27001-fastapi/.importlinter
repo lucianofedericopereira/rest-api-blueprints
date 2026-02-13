@@ -10,8 +10,7 @@
 # CI:  make check-layers
 
 [importlinter]
-root_packages =
-    app
+root_packages = app
 
 [importlinter:contract:domain-is-pure]
 name = Domain layer must not import infrastructure, api, or core
@@ -38,9 +37,3 @@ layers =
     app.api
     app.core
     app.domain
-ignore_imports =
-    # config and settings are shared utilities, not a layer
-    app.api.** -> app.config
-    app.core.** -> app.config
-    app.domain.** -> app.config
-    app.infrastructure.** -> app.config
