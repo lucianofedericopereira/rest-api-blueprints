@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-02-13
+
+### Fixed
+
+**FastAPI — A.14 layer boundary (import-linter, 3 broken contracts)**
+- `app/domain/events.py`: extracted `DomainEvent`, `EventBus`, and `event_bus` singleton into the domain layer — eliminates the `domain → core` dependency at the event bus
+- `app/domain/exceptions.py`: extracted `DomainError` and `ConflictError` into the domain layer — eliminates the `domain → core` dependency on exceptions
+- `app/domain/persistence.py`: extracted SQLAlchemy `Base = declarative_base()` into the domain layer — eliminates the `domain → core` dependency on the database module
+- `app/domain/users/events.py`: imports `DomainEvent` base from `app.domain.events` (was `app.core.events`)
+- `app/domain/users/models.py`: imports `Base` from `app.domain.persistence` (was `app.core.database`)
+- `app/domain/users/service.py`: imports `ConflictError` from `app.domain.exceptions` and `EventBus`/`event_bus` from `app.domain.events` (both were `app.core.*`)
+- `app/core/events.py`: converted to a re-export shim for backward-compatible infrastructure/application consumers
+- `app/core/database.py`: re-exports `Base` from `app.domain.persistence` for infrastructure consumers
+- `app/main.py`: added `DomainConflictError` exception handler mapping `app.domain.exceptions.ConflictError` → HTTP 409
+- All 3 import-linter contracts now pass: "Domain must not import core/infrastructure/api", "Infrastructure must not import api", "Strict top-down layer ordering"
+
+**FastAPI — missing dependency**
+- `pyproject.toml`: changed `pydantic>=2.6.0` → `pydantic[email]>=2.6.0` — `EmailStr` used in `app/domain/users/schemas.py` requires the `email-validator` package bundled in the `pydantic[email]` extra; its absence caused `ModuleNotFoundError` during test collection
+
 ## [1.4.3] - 2026-02-13
 
 ### Fixed
