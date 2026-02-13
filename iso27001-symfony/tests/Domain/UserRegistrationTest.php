@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Domain;
 
-use App\Audit\AuditService;
+use App\Audit\AuditServiceInterface;
 use App\Domain\User\DTO\CreateUserRequest;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -19,7 +19,7 @@ class UserRegistrationTest extends TestCase
     private UserRepositoryInterface|MockObject $repository;
     private UserPasswordHasherInterface|MockObject $hasher;
     private EventDispatcherInterface|MockObject $dispatcher;
-    private AuditService|MockObject $auditService;
+    private AuditServiceInterface|MockObject $auditService;
     private UserService $service;
 
     protected function setUp(): void
@@ -27,7 +27,7 @@ class UserRegistrationTest extends TestCase
         $this->repository  = $this->createMock(UserRepositoryInterface::class);
         $this->hasher      = $this->createMock(UserPasswordHasherInterface::class);
         $this->dispatcher  = $this->createMock(EventDispatcherInterface::class);
-        $this->auditService = $this->createMock(AuditService::class);
+        $this->auditService = $this->createMock(AuditServiceInterface::class);
 
         $this->service = new UserService(
             $this->repository,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Audit;
 
+use App\Domain\Shared\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
  * Records WHO did WHAT, WHEN, from WHERE.
  * Uses raw DB insert (not Eloquent) to guarantee append-only semantics.
  */
-final class AuditService
+final class AuditService implements AuditServiceInterface
 {
     /**
      * @param array<string, mixed> $changes

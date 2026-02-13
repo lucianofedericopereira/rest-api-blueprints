@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\User\Service;
 
-use App\Audit\AuditService;
+use App\Audit\AuditServiceInterface;
 use App\Domain\User\DTO\CreateUserRequest;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Event\UserCreated;
@@ -24,7 +24,7 @@ final class UserService
         private readonly UserRepositoryInterface $repository,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly AuditService $auditService,
+        private readonly AuditServiceInterface $auditService,
     ) {}
 
     public function createUser(CreateUserRequest $dto): User

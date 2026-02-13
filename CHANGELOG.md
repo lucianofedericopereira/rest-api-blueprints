@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-02-13
+
+### Fixed
+
+**Symfony — tests (12 errors)**
+- `.env.test`: added `LOCK_DSN=flock` — `symfony/lock` requires the env var at container boot; `flock` uses the filesystem so no Redis is needed in CI
+- Introduced `App\Audit\AuditServiceInterface` — `AuditService` is declared `final readonly`, making it impossible for PHPUnit to create a mock proxy; the interface is now the type-hint in `UserService` and `UserRegistrationTest`
+- Introduced `App\RateLimiter\RateLimiterFactoryInterface` and `App\RateLimiter\RateLimiterFactoryAdapter` — `Symfony\Component\RateLimiter\RateLimiterFactory` is `final`, so it cannot be doubled; the adapter wraps the concrete factory and is wired in `services.yaml` via three named service definitions (`AnonymousApiLimiterFactory`, `LoginIpLimiterFactory`, `WriteApiLimiterFactory`); `RateLimitSubscriber` and `RateLimitSubscriberTest` now depend on the interface
+
+**Laravel — static analysis (deptrac A.14, 4 violations)**
+- `AuditUserCreated`, `AuditUserUpdated`, `AuditUserDeleted`: replaced direct `App\Infrastructure\Audit\AuditService` import with `App\Domain\Shared\Contracts\AuditServiceInterface` — Application layer listeners must not depend on Infrastructure
+- `TelemetryDomainEventListener`: replaced `App\Infrastructure\Telemetry\MetricsCollector` with `App\Domain\Shared\Contracts\MetricsCollectorInterface` for the same reason
+- Created `app/Domain/Shared/Contracts/AuditServiceInterface.php` and `MetricsCollectorInterface.php` — shared domain contracts for cross-cutting concerns
+- `AuditService` and `MetricsCollector` now implement their respective domain interfaces
+- `AppServiceProvider`: bound both interfaces to their Infrastructure implementations via `$this->app->bind()`
+
+**FastAPI — mypy strict**
+- `aws_telemetry.py`: broadened `# type: ignore` on both `aws_xray_sdk` imports from `[import-not-found]` to `[import-untyped,import-not-found]` — mypy raises `import-untyped` when the package is installed without stubs and `import-not-found` when it is absent; covering both codes eliminates the "unused ignore" errors regardless of install state
+
 ## [1.4.0] - 2026-02-12
 
 ### Fixed

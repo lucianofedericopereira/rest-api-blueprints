@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Telemetry;
 
+use App\Domain\Shared\Contracts\MetricsCollectorInterface;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * In production, replace with a Prometheus push-gateway client,
  * StatsD emitter, or Datadog DogStatsD client.
  */
-final class MetricsCollector
+final class MetricsCollector implements MetricsCollectorInterface
 {
     /** @var array<string, int> */
     private array $counters = [];

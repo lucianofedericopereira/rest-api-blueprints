@@ -153,7 +153,7 @@ class XRayTracer:
     def begin_segment(name: str, trace_id: Optional[str] = None) -> None:
         """Start an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-not-found]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped,import-not-found]
             xray_recorder.begin_segment(name, traceid=trace_id)
         except ImportError:
             pass
@@ -162,7 +162,7 @@ class XRayTracer:
     def end_segment() -> None:
         """End an X-Ray segment if aws-xray-sdk is available."""
         try:
-            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-not-found]
+            from aws_xray_sdk.core import xray_recorder  # type: ignore[import-untyped,import-not-found]
             xray_recorder.end_segment()
         except ImportError:
             pass

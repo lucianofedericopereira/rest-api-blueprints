@@ -11,22 +11,22 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use App\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\RateLimiter\LimiterInterface;
 use Symfony\Component\RateLimiter\RateLimit;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 class RateLimitSubscriberTest extends TestCase
 {
-    private RateLimiterFactory|MockObject $anonymousApiLimiter;
-    private RateLimiterFactory|MockObject $loginIpLimiter;
-    private RateLimiterFactory|MockObject $writeApiLimiter;
+    private RateLimiterFactoryInterface|MockObject $anonymousApiLimiter;
+    private RateLimiterFactoryInterface|MockObject $loginIpLimiter;
+    private RateLimiterFactoryInterface|MockObject $writeApiLimiter;
     private RateLimitSubscriber $subscriber;
 
     protected function setUp(): void
     {
-        $this->anonymousApiLimiter = $this->createMock(RateLimiterFactory::class);
-        $this->loginIpLimiter      = $this->createMock(RateLimiterFactory::class);
-        $this->writeApiLimiter     = $this->createMock(RateLimiterFactory::class);
+        $this->anonymousApiLimiter = $this->createMock(RateLimiterFactoryInterface::class);
+        $this->loginIpLimiter      = $this->createMock(RateLimiterFactoryInterface::class);
+        $this->writeApiLimiter     = $this->createMock(RateLimiterFactoryInterface::class);
 
         $this->subscriber = new RateLimitSubscriber(
             $this->anonymousApiLimiter,

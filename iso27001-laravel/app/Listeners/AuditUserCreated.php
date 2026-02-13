@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Domain\User\Events\UserCreated;
-use App\Infrastructure\Audit\AuditService;
+use App\Domain\Shared\Contracts\AuditServiceInterface;
 
 /**
  * A.12: Records an immutable audit entry when a user is created.
@@ -13,7 +13,7 @@ use App\Infrastructure\Audit\AuditService;
  */
 final readonly class AuditUserCreated
 {
-    public function __construct(private AuditService $auditService) {}
+    public function __construct(private AuditServiceInterface $auditService) {}
 
     public function handle(UserCreated $event): void
     {

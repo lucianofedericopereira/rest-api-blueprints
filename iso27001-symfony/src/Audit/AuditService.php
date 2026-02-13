@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * A.12: Immutable audit trail for compliance-critical operations.
  * Records WHO did WHAT, WHEN, and WHERE.
  */
-final readonly class AuditService
+final readonly class AuditService implements AuditServiceInterface
 {
     public function __construct(
         private AuditRepository $repository,

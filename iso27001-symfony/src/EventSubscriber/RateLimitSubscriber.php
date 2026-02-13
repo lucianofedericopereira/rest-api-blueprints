@@ -8,7 +8,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use App\RateLimiter\RateLimiterFactoryInterface;
 
 /**
  * A.17: Rate limiting subscriber — three tiers.
@@ -21,9 +21,9 @@ final class RateLimitSubscriber implements EventSubscriberInterface
     private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
     public function __construct(
-        private readonly RateLimiterFactory $anonymousApiLimiter,
-        private readonly RateLimiterFactory $loginIpLimiter,
-        private readonly RateLimiterFactory $writeApiLimiter,
+        private readonly RateLimiterFactoryInterface $anonymousApiLimiter,
+        private readonly RateLimiterFactoryInterface $loginIpLimiter,
+        private readonly RateLimiterFactoryInterface $writeApiLimiter,
     ) {}
 
     public static function getSubscribedEvents(): array

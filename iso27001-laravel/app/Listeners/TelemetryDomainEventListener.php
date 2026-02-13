@@ -7,7 +7,7 @@ namespace App\Listeners;
 use App\Domain\User\Events\UserCreated;
 use App\Domain\User\Events\UserDeleted;
 use App\Domain\User\Events\UserUpdated;
-use App\Infrastructure\Telemetry\MetricsCollector;
+use App\Domain\Shared\Contracts\MetricsCollectorInterface;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  */
 final readonly class TelemetryDomainEventListener
 {
-    public function __construct(private MetricsCollector $metrics) {}
+    public function __construct(private MetricsCollectorInterface $metrics) {}
 
     public function handle(UserCreated|UserUpdated|UserDeleted $event): void
     {

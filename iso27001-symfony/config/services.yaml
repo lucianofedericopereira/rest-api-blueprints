@@ -48,3 +48,28 @@ services:
 
     # User repository implementation
     App\Domain\User\Repository\UserRepositoryInterface: '@App\Domain\User\Repository\UserRepository'
+
+    # AuditService interface binding
+    App\Audit\AuditServiceInterface: '@App\Audit\AuditService'
+
+    # Rate limiter factory adapters — wrap Symfony's final RateLimiterFactory
+    App\RateLimiter\AnonymousApiLimiterFactory:
+        class: App\RateLimiter\RateLimiterFactoryAdapter
+        arguments:
+            $inner: '@limiter.anonymous_api'
+
+    App\RateLimiter\LoginIpLimiterFactory:
+        class: App\RateLimiter\RateLimiterFactoryAdapter
+        arguments:
+            $inner: '@limiter.login_ip'
+
+    App\RateLimiter\WriteApiLimiterFactory:
+        class: App\RateLimiter\RateLimiterFactoryAdapter
+        arguments:
+            $inner: '@limiter.write_api'
+
+    App\EventSubscriber\RateLimitSubscriber:
+        arguments:
+            $anonymousApiLimiter: '@App\RateLimiter\AnonymousApiLimiterFactory'
+            $loginIpLimiter: '@App\RateLimiter\LoginIpLimiterFactory'
+            $writeApiLimiter: '@App\RateLimiter\WriteApiLimiterFactory'
