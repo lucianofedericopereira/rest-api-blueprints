@@ -65,16 +65,19 @@ class QualityScore:
 
     def composite(self) -> float:
         """
-        Weighted composite score.
-        Returns a value between 0.0 and 1.0.
+        Weighted composite score, normalized to [0.0, 1.0].
+        Weights sum to 0.95 (5% reserved for a future gap pillar);
+        dividing by 0.95 maps a perfect score to exactly 1.0.
         """
-        return (
+        _WEIGHT_SUM = 0.95
+        raw = (
             self.security        * 0.40
             + self.data_integrity  * 0.20
             + self.reliability     * 0.15
             + self.auditability    * 0.15
             + self.performance     * 0.05
         )
+        return raw / _WEIGHT_SUM
 
     def passes_gate(self) -> bool:
         """True if this score meets the production deployment gate."""

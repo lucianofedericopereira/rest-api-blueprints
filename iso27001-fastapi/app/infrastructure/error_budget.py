@@ -90,14 +90,15 @@ class ErrorBudgetTracker:
         else:
             budget_consumed_pct = min((actual_error_rate / allowed_error_rate) * 100.0, 100.0)
 
+        budget_consumed_pct_rounded = round(budget_consumed_pct, 2)
         return ErrorBudgetSnapshot(
             sla_target=self._sla_target,
             total_requests=total,
             failed_requests=failed,
             client_errors=client_errors,
             observed_availability=round(availability, 6),
-            budget_consumed_pct=round(budget_consumed_pct, 2),
-            budget_exhausted=budget_consumed_pct >= 100.0,
+            budget_consumed_pct=budget_consumed_pct_rounded,
+            budget_exhausted=budget_consumed_pct_rounded >= 100.0,
         )
 
     def reset(self) -> None:
