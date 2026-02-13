@@ -17,6 +17,29 @@ rules/               Cross-project ISO 27001 rule registry + validator
 
 ---
 
+## CI Status — All Tests Passing
+
+All three projects pass their full CI pipeline as of **2026-02-13 (v1.4.5)**:
+
+| Project | Tests | Static Analysis | Layer Boundaries | Secret Scan |
+|---------|:-----:|:---------------:|:----------------:|:-----------:|
+| **FastAPI** | 46 passed | mypy strict ✓ | import-linter (3/3 contracts) ✓ | gitleaks ✓ |
+| **Symfony** | All passed | PHPStan level 8 ✓ | deptrac ✓ | gitleaks ✓ |
+| **Laravel** | All passed | PHPStan level 8 ✓ | deptrac ✓ | gitleaks ✓ |
+
+**FastAPI test breakdown (46 tests):**
+
+| Suite | Tests | Coverage |
+|-------|------:|---------|
+| `tests/integration/test_health.py` | 5 | Health endpoints (liveness, readiness, detailed) |
+| `tests/unit/test_events.py` | 9 | Domain event bus — subscribe, publish, multi-listener |
+| `tests/unit/test_rate_limiter.py` | 14 | Redis-backed rate limiter + in-process fallback |
+| `tests/unit/test_error_budget.py` | 6 | SLA tracker — 5xx budget, 4xx separation, exhaustion flag |
+| `tests/unit/test_quality_score.py` | 6 | Risk-weighted composite score, production gate |
+| `tests/unit/test_security.py` | 6 | JWT creation/decode/pair, bcrypt hash + verify |
+
+---
+
 ## What Is Implemented
 
 ### ISO 27001 Security Controls
@@ -230,4 +253,4 @@ fields timestamp, level, message, service, request_id
 | A.10 | Cryptography | AES-256-GCM field encryption (32-byte key, 12-byte IV, 16-byte auth tag), bcrypt/Argon2 password hashing, HSTS + X-Frame-Options + CSP + X-Content-Type-Options on every response |
 | A.12 | Operations Security | Structured JSON logging with sensitive-field redaction, immutable audit_logs table, event-driven audit trail, correlation IDs (X-Request-ID) in logs and responses, identical log shape across all stacks |
 | A.14 | Secure Development | Input validation (Pydantic v2 / Symfony Validator / FormRequest), mypy strict + PHPStan level 8 in CI, no stack traces or internals exposed to clients |
-| A.17 | Business Continuity | Liveness / readiness / detailed health checks, error budget tracker (99.9% SLA, 5xx budget deduction, wired to every response), quality score calculator (security 40% · integrity 20% · reliability 15% · auditability 15% · performance 10%), tiered rate limiting |
+| A.17 | Business Continuity | Liveness / readiness / detailed health checks, error budget tracker (99.9% SLA, 5xx budget deduction, wired to every response), quality score calculator (security 40% · integrity 20% · reliability 15% · auditability 15% · performance 5% · 5% reserved), tiered rate limiting |

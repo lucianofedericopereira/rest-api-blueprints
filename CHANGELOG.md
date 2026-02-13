@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-02-13
+
+### Fixed
+
+**FastAPI — unit test failures (4 tests)**
+- `app/infrastructure/error_budget.py`: `ErrorBudgetSnapshot.budget_exhausted` was evaluated against the pre-`round()` value of `budget_consumed_pct`; floating-point division of `1/1000 ÷ (1−0.999)` yields a result slightly below `100.0`, causing `>= 100.0` to return `False` even though the rounded display value is `100.0`; fix: round first into a named variable, then compare (`budget_consumed_pct_rounded >= 100.0`)
+- `app/infrastructure/quality_score.py`: `QualityScore.composite()` weights sum to `0.95` (5% reserved for a future pillar), so a perfect input returned `0.95` instead of `1.0`; fix: divide raw weighted sum by `_WEIGHT_SUM = 0.95` to normalize — perfect inputs now return exactly `1.0` and the zero-security gate test still holds (`0.55 / 0.95 ≈ 0.578 < 0.70`)
+- `pyproject.toml`: added `bcrypt>=3.2,<4.0` — `passlib 1.7.4` probes `bcrypt.__about__.__version__` which was removed in `bcrypt 4.0`; pinning to the compatible range restores `hash_password` and `verify_password` in CI
+
+**Secret scan (gitleaks)**
+- SARIF report returned `"results": []` — zero findings; all 46 pytest tests pass
+
 ## [1.4.4] - 2026-02-13
 
 ### Fixed
