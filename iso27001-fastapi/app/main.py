@@ -9,6 +9,7 @@ from app.core.database import Base, engine
 from app.core.events import event_bus
 from app.core.exceptions import APIError
 from app.core.metrics import get_metrics
+from app.domain.exceptions import ConflictError as DomainConflictError
 from app.core.responses import create_error_response
 from app.api.v1 import health, auth, users
 from app.domain.users.events import UserCreated
@@ -62,6 +63,17 @@ def create_app() -> FastAPI:
                 message=exc.message,
                 request_id=getattr(request.state, "request_id", "unknown"),
                 details=exc.details,
+            ),
+        )
+
+    @app.exception_handler(DomainConflictError)
+    async def domain_conflict_handler(request: Request, exc: DomainConflictError) -> JSONResponse:
+        return JSONResponse(
+            status_code=409,
+            content=create_error_response(
+                code="CONFLICT",
+                message=exc.message,
+                request_id=getattr(request.state, "request_id", "unknown"),
             ),
         )
 

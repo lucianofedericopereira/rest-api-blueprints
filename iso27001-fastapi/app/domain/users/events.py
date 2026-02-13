@@ -1,12 +1,11 @@
 """
-User domain events — depend on core.events.DomainEvent base class.
-Dependency direction: domain → core  ✓
+User domain events.
 """
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import uuid
 
-from app.core.events import DomainEvent as _BaseDomainEvent
+from app.domain.events import DomainEvent as _BaseDomainEvent
 
 
 @dataclass(frozen=True)

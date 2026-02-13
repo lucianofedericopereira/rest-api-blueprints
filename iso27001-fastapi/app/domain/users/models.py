@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Boolean, DateTime
-from app.core.database import Base
+from app.domain.persistence import Base
 
 class User(Base):  # type: ignore[misc]
     __tablename__ = "users"

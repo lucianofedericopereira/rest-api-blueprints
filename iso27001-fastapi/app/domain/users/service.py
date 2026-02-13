@@ -4,8 +4,8 @@ from app.domain.users.models import User
 from app.domain.users.schemas import CreateUserRequest, UpdateUserRequest
 from app.domain.users.events import UserCreated
 from app.config.security import hash_password
-from app.core.exceptions import ConflictError
-from app.core.events import EventBus, event_bus
+from app.domain.exceptions import ConflictError
+from app.domain.events import EventBus, event_bus
 
 class UserService:
     def __init__(self, repo: UserRepositoryInterface, bus: EventBus = event_bus):

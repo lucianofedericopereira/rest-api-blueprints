@@ -1,7 +1,8 @@
 from typing import Generator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.orm import sessionmaker, Session
 from app.config.settings import settings
+from app.domain.persistence import Base  # re-exported for infrastructure consumers
 
 # A.12: Database connection configuration
 engine = create_engine(
@@ -11,7 +12,7 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+__all__ = ["Base", "engine", "SessionLocal", "get_db"]
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency for database session management."""
