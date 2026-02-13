@@ -34,3 +34,7 @@ aws = [
 python_version = "3.11"
 strict = true
 exclude = ["tests/"]
+
+[[tool.mypy.overrides]]
+module = "app.infrastructure.aws_telemetry"
+warn_unused_ignores = false
