@@ -10,7 +10,8 @@
 # CI:  make check-layers
 
 [importlinter]
-root_packages = app
+root_packages =
+    app
 
 [importlinter:contract:domain-is-pure]
 name = Domain layer must not import infrastructure, api, or core
