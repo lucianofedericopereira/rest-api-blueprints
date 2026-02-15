@@ -34,7 +34,9 @@ forbidden_modules =
 [importlinter:contract:layers]
 name = Strict top-down layer ordering
 type = layers
+containers =
+    app
 layers =
-    app.api
-    app.core
-    app.domain
+    api
+    core
+    domain
