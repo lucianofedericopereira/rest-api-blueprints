@@ -30,6 +30,8 @@ rules:
       - src/Controller/Api/V1/AuthController.php
     laravel:
       - app/Http/Controllers/Api/V1/AuthController.php
+    nestjs:
+      - src/api/v1/auth.controller.ts
 
   - id: A9-RBAC
     control: "A.9"
@@ -43,6 +45,8 @@ rules:
       - config/packages/security.yaml
     laravel:
       - app/Http/Middleware/RoleMiddleware.php
+    nestjs:
+      - src/core/guards/roles.guard.ts
 
   - id: A9-RATE-LIMIT
     control: "A.9"
@@ -60,6 +64,8 @@ rules:
       - config/packages/rate_limiter.yaml
     laravel:
       - app/Providers/RouteServiceProvider.php
+    nestjs:
+      - src/app.module.ts
 
   - id: A9-BRUTE-FORCE
     control: "A.9"
@@ -74,6 +80,8 @@ rules:
       - src/EventSubscriber/BruteForceSubscriber.php
     laravel:
       - app/Infrastructure/Security/BruteForceGuard.php
+    nestjs:
+      - src/infrastructure/security/brute-force.guard.ts
 
   # ── A.10 Cryptography ───────────────────────────────────────────────────────
 
@@ -90,6 +98,8 @@ rules:
       - src/Infrastructure/Encryption/FieldEncryptor.php
     laravel:
       - app/Infrastructure/Encryption/FieldEncryptor.php
+    nestjs:
+      - src/infrastructure/encryption/field-encryptor.ts
 
   - id: A10-PASSWORD-HASHING
     control: "A.10"
@@ -103,6 +113,8 @@ rules:
       - config/packages/security.yaml
     laravel:
       - app/Domain/User/Services/UserService.php
+    nestjs:
+      - src/domain/users/user.service.ts
 
   - id: A10-SECURITY-HEADERS
     control: "A.10"
@@ -119,6 +131,8 @@ rules:
       - src/EventSubscriber/SecurityHeaderSubscriber.php
     laravel:
       - app/Http/Middleware/SecurityHeadersMiddleware.php
+    nestjs:
+      - src/core/middleware/security-headers.middleware.ts
 
   # ── A.12 Operations Security ────────────────────────────────────────────────
 
@@ -138,6 +152,8 @@ rules:
     laravel:
       - app/Logging/StructuredJsonFormatter.php
       - app/Logging/StructuredLogProcessor.php
+    nestjs:
+      - src/core/middleware/telemetry.middleware.ts
 
   - id: A12-CORRELATION-ID
     control: "A.12"
@@ -152,6 +168,8 @@ rules:
       - src/EventSubscriber/CorrelationIdSubscriber.php
     laravel:
       - app/Http/Middleware/CorrelationIdMiddleware.php
+    nestjs:
+      - src/core/middleware/correlation-id.middleware.ts
 
   - id: A12-AUDIT-LOG
     control: "A.12"
@@ -169,6 +187,9 @@ rules:
     laravel:
       - app/Infrastructure/Audit/AuditService.php
       - app/Infrastructure/Audit/AuditEntry.php
+    nestjs:
+      - src/infrastructure/audit/audit.service.ts
+      - src/infrastructure/audit/audit-log.entity.ts
 
   # ── A.14 Secure Development ─────────────────────────────────────────────────
 
@@ -185,6 +206,8 @@ rules:
       - src/Domain/User/DTO/CreateUserRequest.php
     laravel:
       - app/Http/Requests/CreateUserRequest.php
+    nestjs:
+      - src/domain/users/dto/create-user.dto.ts
 
   - id: A14-STATIC-ANALYSIS
     control: "A.14"
@@ -199,6 +222,8 @@ rules:
       - phpstan.neon
     laravel:
       - phpstan.neon
+    nestjs:
+      - tsconfig.json
 
   - id: A14-NO-STACK-TRACES
     control: "A.14"
@@ -213,6 +238,8 @@ rules:
       - src/EventListener/ApiExceptionListener.php
     laravel:
       - app/Exceptions/Handler.php
+    nestjs:
+      - src/core/filters/all-exceptions.filter.ts
 
   # ── A.17 Business Continuity ────────────────────────────────────────────────
 
@@ -229,6 +256,8 @@ rules:
       - src/Controller/Api/V1/HealthController.php
     laravel:
       - app/Http/Controllers/Api/V1/HealthController.php
+    nestjs:
+      - src/api/v1/health.controller.ts
 
   - id: A17-ERROR-BUDGET
     control: "A.17"
@@ -245,6 +274,9 @@ rules:
       - src/Infrastructure/Telemetry/ErrorBudgetTracker.php
     laravel:
       - app/Infrastructure/Telemetry/ErrorBudgetTracker.php
+    nestjs:
+      - src/infrastructure/telemetry/error-budget.tracker.ts
+      - src/core/middleware/telemetry.middleware.ts
 
   - id: A17-QUALITY-SCORE
     control: "A.17"
@@ -258,3 +290,5 @@ rules:
       - src/Infrastructure/Telemetry/QualityScoreCalculator.php
     laravel:
       - app/Infrastructure/Telemetry/QualityScoreCalculator.php
+    nestjs:
+      - src/infrastructure/telemetry/quality-score.calculator.ts

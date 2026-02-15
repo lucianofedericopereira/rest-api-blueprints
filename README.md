@@ -1,9 +1,14 @@
 # ISO 27001 Compliant REST API Reference Implementation
 
-Three production-grade reference implementations of a REST API demonstrating
+Four reference implementations of a REST API demonstrating
 **ISO 27001** security controls with Domain-Driven Design, structured telemetry,
-and defensive security patterns in **PHP (Symfony 7.3 / Laravel 12)** and
-**Python (FastAPI 0.111+)**.
+and defensive security patterns in **PHP (Symfony 7.3 / Laravel 12)**,
+**Python (FastAPI 0.111+)**, and **Node.js (NestJS 10 / TypeScript)**.
+
+> **NestJS note:** The `iso27001-nestjs/` implementation is a *Node.js safety-net
+> blueprint* — it demonstrates the same ISO 27001 controls and DDD patterns in
+> idiomatic NestJS, without the exhaustive CI pipeline (no deptrac, no
+> mypy/PHPStan-equivalent gate) of the other three stacks.
 
 ## Project Structure
 
@@ -11,6 +16,7 @@ and defensive security patterns in **PHP (Symfony 7.3 / Laravel 12)** and
 iso27001-fastapi/    FastAPI (Python 3.11)
 iso27001-symfony/    Symfony 7.3 (PHP 8.2)
 iso27001-laravel/    Laravel 12 (PHP 8.2)
+iso27001-nestjs/     NestJS 10 (Node.js / TypeScript) — Node safety-net blueprint
 rules/               Cross-project ISO 27001 rule registry + validator
 .pre-commit-config.yaml   Root-level pre-commit hooks (secret scan, lint, format)
 ```
@@ -26,6 +32,7 @@ All three projects pass their full CI pipeline as of **2026-02-13 (v1.4.5)**:
 | **FastAPI** | 46 passed | mypy strict ✓ | import-linter (3/3 contracts) ✓ | gitleaks ✓ |
 | **Symfony** | All passed | PHPStan level 8 ✓ | deptrac ✓ | gitleaks ✓ |
 | **Laravel** | All passed | PHPStan level 8 ✓ | deptrac ✓ | gitleaks ✓ |
+| **NestJS** | — (no CI gate) | TypeScript strict | manual / convention | — |
 
 **FastAPI test breakdown (46 tests):**
 
@@ -44,27 +51,27 @@ All three projects pass their full CI pipeline as of **2026-02-13 (v1.4.5)**:
 
 ### ISO 27001 Security Controls
 
-| Control | Feature | FastAPI | Symfony | Laravel |
-|---------|---------|:-------:|:-------:|:-------:|
-| A.9 | JWT authentication — short-lived access token (30 min) + refresh token (7 days) | ✓ | ✓ | ✓ |
-| A.9 | `POST /auth/refresh` — token rotation (old token revoked on issue) | ✓ | ✓ | ✓ |
-| A.9 | RBAC: `admin > manager > analyst > viewer` enforced on every route | ✓ | ✓ | ✓ |
-| A.9 | Rate limiting — auth (10/min), write (30/min), global (100/min) per IP | ✓ | ✓ | ✓ |
-| A.9 | Brute-force lockout — 5 failures → 15 min lock (Redis-backed with fallback) | ✓ | ✓ | ✓ |
-| A.10 | AES-256-GCM field-level encryption (PII at rest) | ✓ | ✓ | ✓ |
-| A.10 | bcrypt / Argon2 password hashing | ✓ | ✓ | ✓ |
-| A.10 | HSTS, X-Frame-Options, CSP, X-Content-Type-Options headers | ✓ | ✓ | ✓ |
-| A.12 | Structured JSON logging — automatic sensitive-field redaction | ✓ | ✓ | ✓ |
-| A.12 | Correlation ID (`X-Request-ID`) through logs, events, responses | ✓ | ✓ | ✓ |
-| A.12 | Identical top-level log shape across all stacks (CloudWatch-queryable) | ✓ | ✓ | ✓ |
-| A.12 | Immutable append-only `audit_logs` table | ✓ | ✓ | ✓ |
-| A.12 | Event-driven audit trail (domain events → audit listeners) | ✓ | ✓ | ✓ |
-| A.14 | Input validation (Pydantic v2 / Symfony Validator / FormRequest) | ✓ | ✓ | ✓ |
-| A.14 | Static analysis — mypy strict (Python), PHPStan level 8 (PHP) | ✓ | ✓ | ✓ |
-| A.14 | No stack traces or internals exposed to clients | ✓ | ✓ | ✓ |
-| A.17 | Health checks — liveness, readiness, detailed (admin) | ✓ | ✓ | ✓ |
-| A.17 | Error Budget Tracker — wired to every response; Redis-backed, in-process fallback | ✓ | ✓ | ✓ |
-| A.17 | Quality Score Calculator (risk-weighted: security 40%, integrity 20%, …) | ✓ | ✓ | ✓ |
+| Control | Feature | FastAPI | Symfony | Laravel | NestJS |
+|---------|---------|:-------:|:-------:|:-------:|:------:|
+| A.9 | JWT authentication — short-lived access token (30 min) + refresh token (7 days) | ✓ | ✓ | ✓ | ✓ |
+| A.9 | `POST /auth/refresh` — token rotation (old token revoked on issue) | ✓ | ✓ | ✓ | ✓ |
+| A.9 | RBAC: `admin > manager > analyst > viewer` enforced on every route | ✓ | ✓ | ✓ | ✓ |
+| A.9 | Rate limiting — auth (10/min), write (30/min), global (100/min) per IP | ✓ | ✓ | ✓ | ✓ |
+| A.9 | Brute-force lockout — 5 failures → 15 min lock (Redis-backed with fallback) | ✓ | ✓ | ✓ | ✓ |
+| A.10 | AES-256-GCM field-level encryption (PII at rest) | ✓ | ✓ | ✓ | ✓ |
+| A.10 | bcrypt / Argon2 password hashing | ✓ | ✓ | ✓ | ✓ |
+| A.10 | HSTS, X-Frame-Options, CSP, X-Content-Type-Options headers | ✓ | ✓ | ✓ | ✓ |
+| A.12 | Structured JSON logging — automatic sensitive-field redaction | ✓ | ✓ | ✓ | ✓ |
+| A.12 | Correlation ID (`X-Request-ID`) through logs, events, responses | ✓ | ✓ | ✓ | ✓ |
+| A.12 | Identical top-level log shape across all stacks (CloudWatch-queryable) | ✓ | ✓ | ✓ | ✓ |
+| A.12 | Immutable append-only `audit_logs` table | ✓ | ✓ | ✓ | ✓ |
+| A.12 | Event-driven audit trail (domain events → audit listeners) | ✓ | ✓ | ✓ | ✓ |
+| A.14 | Input validation (Pydantic v2 / Symfony Validator / FormRequest / class-validator) | ✓ | ✓ | ✓ | ✓ |
+| A.14 | Static analysis — mypy strict (Python), PHPStan level 8 (PHP), tsc strict (TS) | ✓ | ✓ | ✓ | ✓ |
+| A.14 | No stack traces or internals exposed to clients | ✓ | ✓ | ✓ | ✓ |
+| A.17 | Health checks — liveness, readiness, detailed (admin) | ✓ | ✓ | ✓ | ✓ |
+| A.17 | Error Budget Tracker — wired to every response; Redis-backed, in-process fallback | ✓ | ✓ | ✓ | ✓ |
+| A.17 | Quality Score Calculator (risk-weighted: security 40%, integrity 20%, …) | ✓ | ✓ | ✓ | ✓ |
 
 ### Auth Endpoints
 
@@ -76,27 +83,27 @@ All three projects pass their full CI pipeline as of **2026-02-13 (v1.4.5)**:
 
 ### Observability
 
-| Feature | FastAPI | Symfony | Laravel |
-|---------|:-------:|:-------:|:-------:|
-| Prometheus metrics (`/metrics`) | ✓ | ✓ | ✓ |
-| Request count + latency histograms | ✓ | ✓ | ✓ |
-| AWS CloudWatch custom metrics emitter | ✓ | ✓ | ✓ |
-| AWS X-Ray trace header propagation | ✓ | ✓ | ✓ |
-| Normalised top-level log shape (all stacks) | ✓ | ✓ | ✓ |
+| Feature | FastAPI | Symfony | Laravel | NestJS |
+|---------|:-------:|:-------:|:-------:|:------:|
+| Prometheus metrics (`/metrics`) | ✓ | ✓ | ✓ | stub |
+| Request count + latency histograms | ✓ | ✓ | ✓ | — |
+| AWS CloudWatch custom metrics emitter | ✓ | ✓ | ✓ | stub |
+| AWS X-Ray trace header propagation | ✓ | ✓ | ✓ | — |
+| Normalised top-level log shape (all stacks) | ✓ | ✓ | ✓ | ✓ |
 
 ### Architecture
 
-| Feature | FastAPI | Symfony | Laravel |
-|---------|:-------:|:-------:|:-------:|
-| Domain-Driven Design (4-layer) | ✓ | ✓ | ✓ |
-| Repository pattern + interface segregation | ✓ | ✓ | ✓ |
-| Domain events dispatched from service layer | ✓ | ✓ | ✓ |
-| SoftDeletes (audit trail preservation) | ✓ | ✓ | ✓ |
-| UUID primary keys | ✓ | ✓ | ✓ |
-| Docker + docker-compose | ✓ | ✓ | ✓ |
-| CI (GitHub Actions) | ✓ | ✓ | ✓ |
-| DDD layer boundary enforcement (deptrac / import-linter) | ✓ | ✓ | ✓ |
-| Cross-project ISO 27001 rule registry | ✓ | ✓ | ✓ |
+| Feature | FastAPI | Symfony | Laravel | NestJS |
+|---------|:-------:|:-------:|:-------:|:------:|
+| Domain-Driven Design (4-layer) | ✓ | ✓ | ✓ | ✓ |
+| Repository pattern + interface segregation | ✓ | ✓ | ✓ | ✓ |
+| Domain events dispatched from service layer | ✓ | ✓ | ✓ | ✓ |
+| SoftDeletes (audit trail preservation) | ✓ | ✓ | ✓ | ✓ |
+| UUID primary keys | ✓ | ✓ | ✓ | ✓ |
+| Docker + docker-compose | ✓ | ✓ | ✓ | ✓ |
+| CI (GitHub Actions) | ✓ | ✓ | ✓ | — |
+| DDD layer boundary enforcement (deptrac / import-linter) | ✓ | ✓ | ✓ | — |
+| Cross-project ISO 27001 rule registry | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
@@ -129,6 +136,7 @@ A `Makefile` unifies commands for all three stacks.
 - Docker & Docker Compose
 - PHP 8.2+ & Composer
 - Python 3.11+ & pip
+- Node.js 20+ & npm
 
 ### Commands
 
@@ -147,6 +155,9 @@ make test-php           # phpunit
 make setup-laravel      # composer install + artisan key:generate
 make migration-laravel  # Eloquent migrations
 make test-laravel       # php artisan test
+
+make setup-nestjs       # npm install
+make migration-nestjs   # TypeORM synchronize
 
 make db-reset           # Drop + recreate + migrate all databases
 

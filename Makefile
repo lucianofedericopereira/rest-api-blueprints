@@ -1,7 +1,7 @@
 .PHONY: help up down logs \
-        setup-php setup-python setup-laravel \
+        setup-php setup-python setup-laravel setup-nestjs \
         test-php test-python test-laravel \
-        migration-php migration-laravel \
+        migration-php migration-laravel migration-nestjs \
         db-reset check-security check-static check-layers check-rules clean
 
 help: ## Show this help
@@ -9,20 +9,23 @@ help: ## Show this help
 
 # ── Docker ──────────────────────────────────────────────────────────────────
 
-up: ## Start Docker containers (all three stacks)
+up: ## Start Docker containers (all stacks)
 	cd iso27001-fastapi && docker-compose up -d
 	cd iso27001-symfony && docker-compose up -d
 	cd iso27001-laravel && docker-compose up -d
+	cd iso27001-nestjs && docker-compose up -d
 
 down: ## Stop all Docker containers
 	cd iso27001-fastapi && docker-compose down
 	cd iso27001-symfony && docker-compose down
 	cd iso27001-laravel && docker-compose down
+	cd iso27001-nestjs && docker-compose down
 
 logs: ## View Docker logs (all stacks)
 	docker-compose -f iso27001-fastapi/docker-compose.yml logs -f &
 	docker-compose -f iso27001-symfony/docker-compose.yml logs -f &
-	docker-compose -f iso27001-laravel/docker-compose.yml logs -f
+	docker-compose -f iso27001-laravel/docker-compose.yml logs -f &
+	docker-compose -f iso27001-nestjs/docker-compose.yml logs -f
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +40,9 @@ setup-laravel: ## Install Laravel PHP dependencies, generate app key, and genera
 
 setup-python: ## Install FastAPI Python dependencies
 	cd iso27001-fastapi && pip install -e .[dev]
+
+setup-nestjs: ## Install NestJS Node.js dependencies
+	cd iso27001-nestjs && npm install
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -56,6 +62,9 @@ migration-php: ## Run Symfony Doctrine migrations
 
 migration-laravel: ## Run Laravel Eloquent migrations
 	cd iso27001-laravel && php artisan migrate --no-interaction
+
+migration-nestjs: ## Run NestJS TypeORM migrations (synchronize)
+	cd iso27001-nestjs && npm run migration:run
 
 # ── Database reset ───────────────────────────────────────────────────────────
 
@@ -91,3 +100,4 @@ clean: ## Clean up build artifacts
 	rm -rf iso27001-symfony/vendor iso27001-symfony/var/cache
 	rm -rf iso27001-laravel/vendor iso27001-laravel/bootstrap/cache
 	rm -rf iso27001-fastapi/*.egg-info
+	rm -rf iso27001-nestjs/node_modules iso27001-nestjs/dist
