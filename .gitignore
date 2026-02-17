@@ -16,7 +16,7 @@ desktop.ini
 *.key
 *.p12
 *.pfx
-.env
+/.env
 .env.local
 .env.*.local
 secrets/

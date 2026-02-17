@@ -69,6 +69,8 @@ jobs:
 
       - name: Install Dependencies
         run: composer install --prefer-dist --no-progress
+        env:
+          APP_ENV: test
 
       - name: Generate JWT Keys
         run: |
