@@ -1,0 +1,44 @@
+/.env.local
+/.env.testing
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+
+# Composer
+composer.lock
+
+# IDE
+/.fleet
+/.idea
+/.vscode
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache
+/phpunit.xml
+
+# Bootstrap cache
+/bootstrap/cache/*.php
+
+# Vagrant / legacy
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+
+# PHPStan / Larastan cache
+.phpstan.cache
+/phpstan-baseline.neon
+
+# Laravel IDE helper generated stubs (not for VCS)
+/_ide_helper.php
+/_ide_helper_models.php
+/.phpstorm.meta.php
+
+# Logs & coverage
+*.log
+coverage/
+junit*.xml

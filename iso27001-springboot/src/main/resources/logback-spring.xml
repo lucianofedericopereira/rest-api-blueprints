@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A.12 — Structured JSON logging.
+  Uses logstash-logback-encoder to emit one JSON object per log line.
+  Fields: timestamp, level, logger, message, service, environment + MDC fields.
+-->
+<configuration>
+
+  <springProperty scope="context" name="APP_NAME"  source="spring.application.name" defaultValue="iso27001-springboot"/>
+  <springProperty scope="context" name="APP_ENV"   source="app.env"                 defaultValue="development"/>
+
+  <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <customFields>{"service":"${APP_NAME}","environment":"${APP_ENV}"}</customFields>
+      <!-- A.12: redact sensitive fields -->
+      <fieldNames>
+        <timestamp>timestamp</timestamp>
+        <version>[ignore]</version>
+        <levelValue>[ignore]</levelValue>
+      </fieldNames>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON_STDOUT"/>
+  </root>
+
+  <!-- Reduce noise from Spring internals in tests -->
+  <springProfile name="test">
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate"       level="WARN"/>
+    <logger name="com.zaxxer.hikari"   level="WARN"/>
+  </springProfile>
+
+</configuration>

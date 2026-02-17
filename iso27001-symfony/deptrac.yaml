@@ -1,0 +1,74 @@
+# deptrac — DDD layer boundary enforcement (Symfony)
+#
+# Enforces the four-layer DDD architecture. The allowed dependency direction is:
+#
+#   Api → Application → Domain        (top-down only)
+#   Infrastructure → Domain           (infra implements domain interfaces)
+#   Infrastructure ← Domain           (FORBIDDEN: domain must not import infra)
+#
+# Run: vendor/bin/deptrac analyse
+# CI:  make check-layers
+
+deptrac:
+  paths:
+    - src
+
+  layers:
+
+    - name: Domain
+      collectors:
+        - type: classLike
+          value: App\\Domain\\(?!.*\\(Service|Repository)\\).*
+
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: src/Infrastructure/.*
+        - type: directory
+          value: src/Logging/.*
+
+    - name: Application
+      collectors:
+        - type: classLike
+          value: App\\Domain\\.*\\Service\\.*
+        - type: classLike
+          value: App\\Domain\\.*\\Repository\\.*
+        - type: classLike
+          value: App\\Audit\\.*
+
+    - name: Api
+      collectors:
+        - type: directory
+          value: src/Controller/.*
+        - type: directory
+          value: src/EventSubscriber/.*
+        - type: directory
+          value: src/EventListener/.*
+        - type: directory
+          value: src/Security/.*
+
+  ruleset:
+    Domain:
+      # Domain must not depend on any other layer
+      - ~Infrastructure
+      - ~Api
+      - ~Application
+
+    Infrastructure:
+      # Infrastructure implements domain interfaces — may import Domain
+      - Domain
+
+    Application:
+      # Services and repositories sit on top of Domain
+      - Domain
+      - Infrastructure
+
+    Api:
+      # Controllers and subscribers wire everything together
+      - Domain
+      - Application
+      - Infrastructure
+
+  skip_violations:
+    # Symfony kernel/framework classes are not project layers
+    App\Kernel: ~

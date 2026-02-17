@@ -1,0 +1,5 @@
+# Versioned API routes — all controllers under src/Controller/Api/V1/
+api_v1:
+    resource: '../../src/Controller/Api/V1/'
+    type: attribute
+    prefix: /api/v1

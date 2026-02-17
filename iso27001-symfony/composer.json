@@ -1,0 +1,73 @@
+{
+    "name": "luciano/iso27001-symfony",
+    "description": "ISO 27001 compliant REST API — Symfony 6+ reference implementation",
+    "type": "project",
+    "license": "proprietary",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "doctrine/doctrine-bundle": "^2.11",
+        "doctrine/doctrine-migrations-bundle": "^3.3",
+        "doctrine/orm": "^3.1",
+        "lexik/jwt-authentication-bundle": "^2.20",
+        "nelmio/cors-bundle": "^2.4",
+        "symfony/console": "7.3.*",
+        "symfony/dotenv": "7.3.*",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "7.3.*",
+        "symfony/monolog-bundle": "^3.10",
+        "symfony/password-hasher": "7.3.*",
+        "symfony/lock": "7.3.*",
+        "symfony/rate-limiter": "7.3.*",
+        "symfony/runtime": "7.3.*",
+        "symfony/security-bundle": "7.3.*",
+        "symfony/uid": "7.3.*",
+        "symfony/validator": "7.3.*",
+        "symfony/yaml": "7.3.*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "phpstan/phpstan-symfony": "^1.0",
+        "phpunit/phpunit": "^11.0",
+        "deptrac/deptrac": "^2.0",
+        "symfony/browser-kit": "7.3.*",
+        "symfony/css-selector": "7.3.*",
+        "symfony/phpunit-bridge": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": ["@auto-scripts"],
+        "post-update-cmd": ["@auto-scripts"]
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.0"
+        },
+        "allow-plugins": {
+            "symfony/flex": true,
+            "symfony/runtime": true
+        }
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "7.3.*"
+        }
+    }
+}

@@ -1,0 +1,550 @@
+openapi: "3.1.0"
+
+info:
+  title: ISO 27001 Elixir/Phoenix Blueprint
+  version: "1.0.0"
+  description: |
+    Reference REST API implementing ISO 27001 security controls.
+    Built with Elixir, Phoenix, Ecto, PostgreSQL, Redis, and Prometheus.
+  contact:
+    name: API Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8004
+    description: Local development
+
+tags:
+  - name: auth
+    description: Authentication and token management (A.9)
+  - name: users
+    description: User management (A.9)
+  - name: health
+    description: Liveness, readiness, and diagnostics (A.17)
+
+paths:
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: Authenticate and issue JWT pair
+      description: >
+        Validates credentials and returns a short-lived access token (30 min) and a
+        long-lived refresh token (7 days). Rate-limited to 10 requests/min per IP.
+        Brute-force locked after 5 consecutive failures for 15 minutes (A.9).
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Token pair issued
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Exchange refresh token for a new token pair
+      description: >
+        Issues a new access + refresh token pair (A.9).
+      tags: [auth]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: New token pair issued
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      summary: Acknowledge logout (stateless)
+      description: >
+        Stateless logout acknowledgement. Client must discard tokens (A.9).
+      tags: [auth]
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Logged out
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/users:
+    post:
+      operationId: createUser
+      summary: Register a new user
+      description: >
+        Creates a new user account. Passwords bcrypt-hashed at cost 12 (A.10).
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: User created
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+    get:
+      operationId: listUsers
+      summary: List users (admin only)
+      description: >
+        Returns a paginated list of users. Restricted to admin role (A.9).
+      tags: [users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: User list
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/users/me:
+    get:
+      operationId: getMe
+      summary: Get current user profile
+      description: Returns the authenticated user's own profile (A.9).
+      tags: [users]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/users/{id}:
+    get:
+      operationId: getUser
+      summary: Get user by ID (owner or admin)
+      description: >
+        Returns a user by ID. Only the owner or an admin can access (A.9).
+      tags: [users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: User found
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+    patch:
+      operationId: updateUser
+      summary: Partially update a user (owner or admin)
+      description: >
+        Updates email and/or full name. Only the owner or an admin can update (A.9).
+      tags: [users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: User updated
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+    delete:
+      operationId: deleteUser
+      summary: Soft-delete a user (admin only)
+      description: >
+        Soft-deletes a user. Record preserved for audit trail (A.9, A.12).
+      tags: [users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: User deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/health/live:
+    get:
+      operationId: healthLive
+      summary: Liveness probe
+      description: >
+        Returns 200 if the process is running. No dependency checks (A.17).
+      tags: [health]
+      responses:
+        "200":
+          description: Process alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthLive"
+
+  /api/v1/health/ready:
+    get:
+      operationId: healthReady
+      summary: Readiness probe
+      description: >
+        Returns 200 if all critical dependencies (DB) are reachable (A.17).
+      tags: [health]
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReady"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/health/detailed:
+    get:
+      operationId: healthDetailed
+      summary: Detailed diagnostics (admin only)
+      description: >
+        Returns full telemetry: error budget remaining, quality score, uptime, and
+        component status. Restricted to the admin role (A.17).
+      tags: [health]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Full diagnostics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthDetailed"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  headers:
+    X-RateLimit-Limit:
+      description: Maximum requests allowed in the current window
+      schema:
+        type: integer
+    X-RateLimit-Remaining:
+      description: Requests remaining in the current window
+      schema:
+        type: integer
+
+  schemas:
+    TokenPair:
+      type: object
+      required: [access_token, refresh_token, token_type]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          enum: [bearer]
+
+    UserCreate:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 12
+        role:
+          type: string
+          enum: [admin, manager, analyst, viewer]
+
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+
+    User:
+      type: object
+      required: [id, email, role, is_active, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, analyst, viewer]
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    HealthLive:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    HealthReady:
+      type: object
+      required: [status, checks]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    HealthDetailed:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        error_budget_remaining_pct:
+          type: number
+        quality_score:
+          type: number
+        uptime_seconds:
+          type: number
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Insufficient role permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooManyRequests:
+      description: Rate limit or brute-force lockout exceeded
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/X-RateLimit-Remaining"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ServiceUnavailable:
+      description: Service dependency is unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

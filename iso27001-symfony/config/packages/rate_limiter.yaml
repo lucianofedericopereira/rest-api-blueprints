@@ -1,0 +1,19 @@
+framework:
+    rate_limiter:
+        # A.17: Global rate limit — all API endpoints (DoS protection)
+        anonymous_api:
+            policy: fixed_window
+            limit: 100
+            interval: 1 minute
+
+        # A.9: Auth endpoint rate limit — 10 req/min per IP (brute-force protection)
+        login_ip:
+            policy: fixed_window
+            limit: 10
+            interval: 1 minute
+
+        # A.17: Write operations rate limit — 30 req/min per IP
+        write_api:
+            policy: fixed_window
+            limit: 30
+            interval: 1 minute

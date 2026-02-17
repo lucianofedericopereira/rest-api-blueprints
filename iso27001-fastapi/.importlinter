@@ -1,0 +1,42 @@
+# import-linter — DDD layer boundary enforcement (FastAPI)
+#
+# Enforces the four-layer DDD architecture. The allowed dependency direction is:
+#
+#   api → core → domain              (top-down only)
+#   infrastructure → domain          (infra implements domain interfaces)
+#   infrastructure ← domain          (FORBIDDEN: domain must not import infra)
+#
+# Run: lint-imports
+# CI:  make check-layers
+
+[importlinter]
+root_packages =
+    app
+
+[importlinter:contract:domain-is-pure]
+name = Domain layer must not import infrastructure, api, or core
+type = forbidden
+source_modules =
+    app.domain
+forbidden_modules =
+    app.infrastructure
+    app.api
+    app.core
+
+[importlinter:contract:infrastructure-may-not-import-api]
+name = Infrastructure must not import api layer
+type = forbidden
+source_modules =
+    app.infrastructure
+forbidden_modules =
+    app.api
+
+[importlinter:contract:layers]
+name = Strict top-down layer ordering
+type = layers
+containers =
+    app
+layers =
+    api
+    core
+    domain

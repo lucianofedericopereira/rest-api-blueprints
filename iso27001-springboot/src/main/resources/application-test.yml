@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6370  # intentionally wrong port → triggers in-process fallback
+
+app:
+  jwt:
+    secret: test-secret-key-exactly-32-bytes!!
+    access-expires-in: 30m
+    refresh-expires-in: 7d
+  encryption:
+    key: test-only-key-exactly-32bytes-ab

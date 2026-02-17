@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+  "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+  "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  A.14 — Static analysis: Checkstyle enforces code style and common defects.
+  Intentionally minimal — focuses on security-relevant rules.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="TreeWalker">
+
+    <!-- No System.out/err — use structured logger (A.12) -->
+    <module name="Regexp">
+      <property name="format" value="System\.(out|err)\.print"/>
+      <property name="illegalPattern" value="true"/>
+      <property name="message" value="Use structured logger instead of System.out/err (A.12)"/>
+    </module>
+
+    <!-- No printStackTrace — no stack traces to clients (A.14) -->
+    <module name="Regexp">
+      <property name="format" value="\.printStackTrace\(\)"/>
+      <property name="illegalPattern" value="true"/>
+      <property name="message" value="Never call printStackTrace() — log via structured logger (A.14)"/>
+    </module>
+
+    <!-- No hardcoded passwords/secrets (A.10) -->
+    <module name="Regexp">
+      <property name="format" value="(?i)(password|secret|apikey|api_key)\s*=\s*&quot;[^&quot;]+&quot;"/>
+      <property name="illegalPattern" value="true"/>
+      <property name="message" value="Hardcoded credential detected — use environment variable (A.10)"/>
+    </module>
+
+    <!-- Standard Java style -->
+    <module name="EqualsHashCode"/>
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignored"/>
+    </module>
+    <module name="MissingSwitchDefault"/>
+    <module name="DefaultComesLast"/>
+    <module name="FallThrough"/>
+
+  </module>
+
+  <!-- No tab characters -->
+  <module name="FileTabCharacter"/>
+
+</module>

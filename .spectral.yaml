@@ -1,0 +1,78 @@
+extends:
+  - spectral:oas
+
+rules:
+  # ── operationId must be set on every operation ───────────────────────────────
+  operation-id-required:
+    description: >
+      Every operation must have an operationId for SDK generation and
+      traceability in access logs.
+    message: "{{path}} operation is missing operationId"
+    severity: error
+    given: "$.paths.*[get,post,put,patch,delete]"
+    then:
+      - field: operationId
+        function: defined
+
+  # ── Tags must be assigned ────────────────────────────────────────────────────
+  operation-tags-required:
+    description: >
+      Every operation must have at least one tag for documentation grouping
+      and API gateway routing.
+    message: "{{path}} operation has no tags"
+    severity: warn
+    given: "$.paths.*[get,post,put,patch,delete]"
+    then:
+      - field: tags
+        function: defined
+
+  # ── A.9 — 401 Unauthorized must be present on secured operations ─────────────
+  secured-ops-must-have-401:
+    description: >
+      Operations that declare a security scheme must document a 401 response.
+      Missing 401 documentation hides auth failure paths from consumers.
+    message: "{{path}} declares security but has no 401 response documented"
+    severity: warn
+    given: "$.paths.*[get,post,put,patch,delete][?(@.security)]"
+    then:
+      - field: responses.401
+        function: defined
+
+  # ── A.9 — 403 Forbidden must be present on secured operations ───────────────
+  secured-ops-must-have-403:
+    description: >
+      Secured operations should document 403 to communicate role-based access
+      control boundaries to API consumers.
+    message: "{{path}} declares security but has no 403 response documented"
+    severity: warn
+    given: "$.paths.*[get,post,put,patch,delete][?(@.security)]"
+    then:
+      - field: responses.403
+        function: defined
+
+  # ── A.12 — Rate-limit headers on mutating success responses ──────────────────
+  rate-limit-headers-on-write-success:
+    description: >
+      All 201 responses on POST operations should include X-RateLimit-Limit
+      and X-RateLimit-Remaining headers (A.12 capacity management).
+    message: "{{path}} 201 response is missing rate-limit headers"
+    severity: warn
+    given: "$.paths.*.post.responses.201.headers"
+    then:
+      - field: X-RateLimit-Limit
+        function: defined
+      - field: X-RateLimit-Remaining
+        function: defined
+
+  # ── A.9 — 429 Too Many Requests on login-style operations ───────────────────
+  # Applied broadly to POST responses — auth endpoints are the main consumers.
+  post-should-document-429:
+    description: >
+      POST endpoints that can trigger rate limiting or brute-force lockout
+      (A.9) should document 429. This applies to auth/login and auth/token.
+    message: "{{path}} POST has no 429 response — add if this endpoint is rate-limited"
+    severity: warn
+    given: "$.paths.*.post"
+    then:
+      - field: responses.429
+        function: defined

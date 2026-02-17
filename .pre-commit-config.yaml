@@ -1,0 +1,96 @@
+# pre-commit — cross-project hooks for all three stacks
+#
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+
+repos:
+
+  # ── A.10: Secret scanning — never commit credentials ───────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  # ── General file hygiene ────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key          # A.10: blocks accidental key commits
+
+  # ── Python (FastAPI) ────────────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^iso27001-fastapi/
+      - id: ruff-format
+        files: ^iso27001-fastapi/
+
+  # ── PHP — Laravel & Symfony (formatting) ───────────────────────────────────
+  - repo: local
+    hooks:
+      - id: pint-laravel
+        name: Laravel Pint (PHP formatting)
+        language: system
+        entry: bash -c 'cd iso27001-laravel && vendor/bin/pint --dirty'
+        files: ^iso27001-laravel/.*\.php$
+        pass_filenames: false
+
+      - id: phpstan-laravel
+        name: Laravel PHPStan (static analysis)
+        language: system
+        entry: bash -c 'cd iso27001-laravel && vendor/bin/phpstan analyse --no-progress'
+        files: ^iso27001-laravel/app/.*\.php$
+        pass_filenames: false
+
+      - id: phpstan-symfony
+        name: Symfony PHPStan (static analysis)
+        language: system
+        entry: bash -c 'cd iso27001-symfony && vendor/bin/phpstan analyse --no-progress'
+        files: ^iso27001-symfony/src/.*\.php$
+        pass_filenames: false
+
+      # ── TypeScript (NestJS) ──────────────────────────────────────────────────
+      - id: tsc-nestjs
+        name: NestJS TypeScript strict check (A.14)
+        language: system
+        entry: bash -c 'cd iso27001-nestjs && npx tsc --noEmit'
+        files: ^iso27001-nestjs/src/.*\.ts$
+        pass_filenames: false
+
+      - id: check-layers-nestjs
+        name: NestJS DDD layer boundaries (A.14)
+        language: system
+        entry: bash -c 'cd iso27001-nestjs && npm run check:layers'
+        files: ^iso27001-nestjs/src/.*\.ts$
+        pass_filenames: false
+
+      # ── Go (Gin) ─────────────────────────────────────────────────────────────
+      - id: go-vet-gin
+        name: Go/Gin vet — static analysis (A.14)
+        language: system
+        entry: bash -c 'cd iso27001-gin && go mod tidy && go vet ./...'
+        files: ^iso27001-gin/.*\.go$
+        pass_filenames: false
+
+      # ── Elixir (Phoenix) ─────────────────────────────────────────────────────
+      - id: mix-compile-phoenix
+        name: Elixir/Phoenix compile — warnings as errors (A.14)
+        language: system
+        entry: bash -c 'cd iso27001-phoenix && mix compile --warnings-as-errors'
+        files: ^iso27001-phoenix/.*\.exs?$
+        pass_filenames: false
+
+      # ── OpenAPI specs — Spectral lint ────────────────────────────────────────
+      - id: spectral-lint
+        name: OpenAPI specs — Spectral (auth, rate-limit, error-shape)
+        language: system
+        entry: bash -c 'npx @stoplight/spectral-cli lint iso27001-fastapi/openapi.yaml iso27001-symfony/openapi.yaml iso27001-laravel/openapi.yaml iso27001-nestjs/openapi.yaml iso27001-gin/openapi.yaml iso27001-phoenix/openapi.yaml --ruleset .spectral.yaml'
+        files: ^(iso27001-.*/openapi\.yaml|\.spectral\.yaml)$
+        pass_filenames: false

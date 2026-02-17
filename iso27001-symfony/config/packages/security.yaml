@@ -1,0 +1,38 @@
+# A.9: Security configuration — JWT authentication + RBAC
+security:
+    password_hashers:
+        App\Domain\User\Entity\User:
+            algorithm: auto  # Argon2id or bcrypt depending on available extensions
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Domain\User\Entity\User
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        # Health checks — no auth required
+        health:
+            pattern: ^/health
+            security: false
+
+        # All API routes — stateless JWT
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+
+    access_control:
+        - { path: ^/api/v1/auth/login,   roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/auth/refresh, roles: IS_AUTHENTICATED_FULLY }  # A.9: valid JWT required to refresh
+        - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/health, roles: PUBLIC_ACCESS }
+
+    role_hierarchy:
+        ROLE_ADMIN:   [ROLE_MANAGER, ROLE_ANALYST, ROLE_VIEWER]
+        ROLE_MANAGER: [ROLE_ANALYST, ROLE_VIEWER]
+        ROLE_ANALYST: [ROLE_VIEWER]

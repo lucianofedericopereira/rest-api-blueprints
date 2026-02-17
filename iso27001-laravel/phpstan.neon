@@ -1,0 +1,11 @@
+parameters:
+    # A.14: Maximum static analysis level
+    level: 8
+    paths:
+        - app
+    ignoreErrors:
+        # Eloquent magic properties
+        - '#Access to an undefined property App\\Domain\\User\\Models\\User::\$#'
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+    reportUnmatchedIgnoredErrors: false

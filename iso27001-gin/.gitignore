@@ -1,0 +1,26 @@
+# A.10: Never commit secrets
+.env
+
+# Build output
+iso27001-gin
+/bin/
+/dist/
+
+# Go test artifacts
+*.test
+*.out
+coverage.html
+coverage.txt
+
+# Go module download cache (keep go.sum, ignore vendor/)
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

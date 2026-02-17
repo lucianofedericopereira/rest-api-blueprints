@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: ${APP_NAME:iso27001-springboot}
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/iso27001}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:pass}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 1000ms
+      connect-timeout: 1000ms
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# ── Actuator (A.17 — health checks) ──────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      service: ${spring.application.name}
+      environment: ${APP_ENV:development}
+
+# ── Server ────────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+  error:
+    # A.14: suppress Spring's default error attributes (no stack traces)
+    include-stacktrace: never
+    include-exception: false
+    include-message: never
+    include-binding-errors: never
+
+# ── Application security config ───────────────────────────────────────────────
+app:
+  env: ${APP_ENV:development}
+  jwt:
+    secret: ${JWT_SECRET:change-me-to-random-256-bit-secret}
+    access-expires-in: ${JWT_ACCESS_EXPIRES_IN:30m}
+    refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:7d}
+  encryption:
+    key: ${ENCRYPTION_KEY:change-me-to-exactly-32-bytes!!!}
+  aws:
+    region: ${AWS_DEFAULT_REGION:eu-west-1}
+    cloudwatch-namespace: ${AWS_CLOUDWATCH_NAMESPACE:ISO27001/API}
+
+# ── Logging (A.12 — structured JSON) ─────────────────────────────────────────
+logging:
+  config: classpath:logback-spring.xml

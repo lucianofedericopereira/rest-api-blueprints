@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8004:8004"
+    environment:
+      APP_ENV: development
+      PORT: "8004"
+      DATABASE_URL: "ecto://user:pass@db/iso27001"
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: change-me-in-production
+      ENCRYPTION_KEY: dev-only-32-byte-key-change-me!!
+      SECRET_KEY_BASE: dev-only-secret-key-base-64-chars-replace-in-prod-00000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: iso27001
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d iso27001"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", ""]
+
+volumes:
+  postgres_data:

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  php:
+    build: .
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "9000:9000"
+    environment:
+      - DATABASE_URL=postgresql://symfony:ChangeMe@db:5432/app?serverVersion=15&charset=utf8
+      - APP_ENV=dev
+      - APP_SECRET=ChangeMeInProduction
+      - JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+      - JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+      - JWT_PASSPHRASE=ChangeMe
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=app
+      - POSTGRES_PASSWORD=ChangeMe
+      - POSTGRES_USER=symfony
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+###> doctrine/doctrine-bundle ###
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
+      # - ./docker/db/data:/var/lib/postgresql/data:rw
+###< doctrine/doctrine-bundle ###
+
+volumes:
+  db_data:
+
+###> doctrine/doctrine-bundle ###
+  database_data:
+###< doctrine/doctrine-bundle ###

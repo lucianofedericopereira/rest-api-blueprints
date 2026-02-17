@@ -1,0 +1,13 @@
+includes:
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+
+parameters:
+    # A.14: Maximum static analysis level
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - src/Kernel.php
+    ignoreErrors: []
+    reportUnmatchedIgnoredErrors: false

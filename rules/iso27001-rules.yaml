@@ -1,0 +1,488 @@
+# ISO 27001 Rule Registry
+#
+# Single source of truth for every security control implemented across all seven
+# reference projects. Each rule entry records:
+#   - control    : ISO 27001 Annex A clause
+#   - title      : short human name
+#   - policy     : what must be true in every implementation
+#   - fastapi    : file(s) relative to iso27001-fastapi/
+#   - symfony    : file(s) relative to iso27001-symfony/
+#   - laravel    : file(s) relative to iso27001-laravel/
+#   - nestjs     : file(s) relative to iso27001-nestjs/
+#   - springboot : file(s) relative to iso27001-springboot/
+#   - gin        : file(s) relative to iso27001-gin/
+#   - phoenix    : file(s) relative to iso27001-phoenix/
+#
+# CI reads this file to verify that every listed file exists on disk.
+# Removing or renaming an implementation file without updating this registry
+# breaks the CI `check-rules` step.
+
+rules:
+
+  # ── A.9 Access Control ──────────────────────────────────────────────────────
+
+  - id: A9-JWT-AUTH
+    control: "A.9"
+    title: "JWT authentication — access + refresh tokens"
+    policy: >
+      Every implementation must issue short-lived access tokens (≤30 min) and
+      long-lived refresh tokens (≤7 days). Refresh must rotate (old token
+      revoked on issue).
+    fastapi:
+      - app/api/v1/auth.py
+    symfony:
+      - src/Controller/Api/V1/AuthController.php
+    laravel:
+      - app/Http/Controllers/Api/V1/AuthController.php
+    nestjs:
+      - src/api/v1/auth.controller.ts
+    springboot:
+      - src/main/java/com/iso27001/api/api/v1/AuthController.java
+    gin:
+      - internal/api/v1/auth.go
+    phoenix:
+      - lib/iso27001_phoenix_web/controllers/v1/auth_controller.ex
+
+  - id: A9-RBAC
+    control: "A.9"
+    title: "Role-based access control (admin > manager > analyst > viewer)"
+    policy: >
+      Every route that is not public must enforce a minimum role.
+      Roles must form a strict hierarchy; a higher role satisfies a lower one.
+    fastapi:
+      - app/api/deps.py
+    symfony:
+      - config/packages/security.yaml
+    laravel:
+      - app/Http/Middleware/RoleMiddleware.php
+    nestjs:
+      - src/core/guards/roles.guard.ts
+    springboot:
+      - src/main/java/com/iso27001/api/core/config/SecurityConfig.java
+    gin:
+      - internal/core/middleware/auth_guard.go
+    phoenix:
+      - lib/iso27001_phoenix_web/controllers/v1/users_controller.ex
+
+  - id: A9-RATE-LIMIT
+    control: "A.9"
+    title: "Tiered rate limiting (auth 10/min · write 30/min · global 100/min)"
+    policy: >
+      Auth endpoints: max 10 requests/min per IP.
+      Write endpoints (POST/PUT/PATCH/DELETE): max 30 requests/min per IP.
+      All other endpoints: max 100 requests/min per IP.
+      Must use Redis when available with in-process fallback.
+    fastapi:
+      - app/core/rate_limiter.py
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/RateLimitSubscriber.php
+      - config/packages/rate_limiter.yaml
+    laravel:
+      - app/Providers/RouteServiceProvider.php
+    nestjs:
+      - src/app.module.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/security/BruteForceGuard.java
+    gin:
+      - internal/core/middleware/rate_limiter.go
+    phoenix:
+      - lib/iso27001_phoenix/core/middleware/rate_limiter.ex
+
+  - id: A9-BRUTE-FORCE
+    control: "A.9"
+    title: "Brute-force lockout (5 failures → 15 min lock)"
+    policy: >
+      After 5 consecutive authentication failures for the same identifier,
+      the account must be locked for 15 minutes. Lock state must be stored in
+      Redis when available (cross-process) with in-process fallback.
+    fastapi:
+      - app/core/brute_force.py
+    symfony:
+      - src/EventSubscriber/BruteForceSubscriber.php
+    laravel:
+      - app/Infrastructure/Security/BruteForceGuard.php
+    nestjs:
+      - src/infrastructure/security/brute-force.guard.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/security/BruteForceGuard.java
+    gin:
+      - internal/core/middleware/brute_force.go
+    phoenix:
+      - lib/iso27001_phoenix/core/middleware/brute_force.ex
+
+  # ── A.10 Cryptography ───────────────────────────────────────────────────────
+
+  - id: A10-FIELD-ENCRYPTION
+    control: "A.10"
+    title: "AES-256-GCM field-level encryption for PII at rest"
+    policy: >
+      Sensitive fields (email, name) must be encrypted at rest using
+      AES-256-GCM with a 32-byte key, 12-byte IV, and 16-byte auth tag.
+      The encryption key must come from an environment variable, never hardcoded.
+    fastapi:
+      - app/infrastructure/encryption.py
+    symfony:
+      - src/Infrastructure/Encryption/FieldEncryptor.php
+    laravel:
+      - app/Infrastructure/Encryption/FieldEncryptor.php
+    nestjs:
+      - src/infrastructure/encryption/field-encryptor.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/encryption/FieldEncryptor.java
+    gin:
+      - internal/infrastructure/encryption/field_encryptor.go
+    phoenix:
+      - lib/iso27001_phoenix/infrastructure/encryption/field_encryptor.ex
+
+  - id: A10-PASSWORD-HASHING
+    control: "A.10"
+    title: "bcrypt / Argon2 password hashing"
+    policy: >
+      Passwords must never be stored in plaintext. Use bcrypt (cost ≥12) or
+      Argon2id. Verification must use a constant-time comparison.
+    fastapi:
+      - app/domain/users/service.py
+    symfony:
+      - config/packages/security.yaml
+    laravel:
+      - app/Domain/User/Services/UserService.php
+    nestjs:
+      - src/domain/users/user.service.ts
+    springboot:
+      - src/main/java/com/iso27001/api/domain/users/UserService.java
+    gin:
+      - internal/domain/users/service.go
+    phoenix:
+      - lib/iso27001_phoenix/domain/users/user.ex
+
+  - id: A10-SECURITY-HEADERS
+    control: "A.10"
+    title: "HSTS, X-Frame-Options, CSP, X-Content-Type-Options on every response"
+    policy: >
+      Every HTTP response must include:
+        Strict-Transport-Security: max-age≥31536000; includeSubDomains
+        X-Frame-Options: DENY
+        X-Content-Type-Options: nosniff
+        Content-Security-Policy: default-src 'none'
+    fastapi:
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/SecurityHeaderSubscriber.php
+    laravel:
+      - app/Http/Middleware/SecurityHeadersMiddleware.php
+    nestjs:
+      - src/core/middleware/security-headers.middleware.ts
+    springboot:
+      - src/main/java/com/iso27001/api/core/middleware/SecurityHeadersFilter.java
+    gin:
+      - internal/core/middleware/security_headers.go
+    phoenix:
+      - lib/iso27001_phoenix/core/middleware/security_headers.ex
+
+  # ── A.12 Operations Security ────────────────────────────────────────────────
+
+  - id: A12-STRUCTURED-LOGGING
+    control: "A.12"
+    title: "Structured JSON logging with sensitive-field redaction"
+    policy: >
+      Every log line must be valid JSON with the top-level fields:
+        timestamp, level, message, service, environment, request_id, context.
+      The fields password, token, secret, authorization, cvv, pan must never
+      appear in log output (redacted before emission).
+    fastapi:
+      - app/core/telemetry.py
+    symfony:
+      - src/Logging/StructuredJsonFormatter.php
+      - src/Logging/StructuredProcessor.php
+    laravel:
+      - app/Logging/StructuredJsonFormatter.php
+      - app/Logging/StructuredLogProcessor.php
+    nestjs:
+      - src/core/middleware/telemetry.middleware.ts
+    springboot:
+      - src/main/java/com/iso27001/api/core/middleware/TelemetryFilter.java
+    gin:
+      - main.go
+    phoenix:
+      - lib/iso27001_phoenix/application.ex
+
+  - id: A12-CORRELATION-ID
+    control: "A.12"
+    title: "Correlation ID (X-Request-ID) propagated through logs and responses"
+    policy: >
+      Every request must receive a UUID correlation ID. If X-Request-ID is
+      present in the request it must be used; otherwise one must be generated.
+      The ID must appear in every log line for that request and in the response.
+    fastapi:
+      - app/core/middleware.py
+    symfony:
+      - src/EventSubscriber/CorrelationIdSubscriber.php
+    laravel:
+      - app/Http/Middleware/CorrelationIdMiddleware.php
+    nestjs:
+      - src/core/middleware/correlation-id.middleware.ts
+    springboot:
+      - src/main/java/com/iso27001/api/core/middleware/TelemetryFilter.java
+    gin:
+      - internal/core/middleware/correlation_id.go
+    phoenix:
+      - lib/iso27001_phoenix/core/middleware/correlation_id.ex
+
+  - id: A12-AUDIT-LOG
+    control: "A.12"
+    title: "Immutable append-only audit_logs table"
+    policy: >
+      Every create / update / delete operation on domain entities must produce
+      an immutable audit record. Records must never be updated or deleted.
+      Minimum fields: id, action, performed_by, resource_type, resource_id,
+      changes (JSON), ip_address, correlation_id, created_at.
+    fastapi:
+      - app/infrastructure/audit.py
+      - app/domain/users/service.py
+    symfony:
+      - src/Audit/AuditService.php
+    laravel:
+      - app/Infrastructure/Audit/AuditService.php
+      - app/Infrastructure/Audit/AuditEntry.php
+    nestjs:
+      - src/infrastructure/audit/audit.service.ts
+      - src/infrastructure/audit/audit-log.entity.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/audit/AuditService.java
+      - src/main/java/com/iso27001/api/infrastructure/audit/AuditLog.java
+    gin:
+      - internal/infrastructure/audit/audit.go
+      - internal/infrastructure/audit/event_bus.go
+    phoenix:
+      - lib/iso27001_phoenix/infrastructure/audit/audit.ex
+      - lib/iso27001_phoenix/infrastructure/audit/event_bus.ex
+
+  # ── A.14 Secure Development ─────────────────────────────────────────────────
+
+  - id: A14-INPUT-VALIDATION
+    control: "A.14"
+    title: "Input validation on all incoming payloads"
+    policy: >
+      All user-supplied input must be validated before reaching business logic.
+      Use the framework's native validation layer (Pydantic v2, Symfony Validator,
+      Laravel FormRequest). No raw array access without prior validation.
+    fastapi:
+      - app/api/v1/users.py
+    symfony:
+      - src/Domain/User/DTO/CreateUserRequest.php
+    laravel:
+      - app/Http/Requests/CreateUserRequest.php
+    nestjs:
+      - src/domain/users/dto/create-user.dto.ts
+    springboot:
+      - src/main/java/com/iso27001/api/api/v1/UsersController.java
+    gin:
+      - internal/api/v1/users.go
+    phoenix:
+      - lib/iso27001_phoenix/domain/users/user.ex
+
+  - id: A14-STATIC-ANALYSIS
+    control: "A.14"
+    title: "Static analysis at maximum strictness in CI"
+    policy: >
+      Python: mypy --strict must pass with zero errors.
+      PHP: PHPStan level 8 must pass with zero errors.
+      Both must run on every CI push and pull request.
+    fastapi:
+      - pyproject.toml
+    symfony:
+      - phpstan.neon
+    laravel:
+      - phpstan.neon
+    nestjs:
+      - tsconfig.json
+    springboot:
+      - checkstyle.xml
+    gin:
+      - go.mod
+    phoenix:
+      - mix.exs
+
+  - id: A14-NO-STACK-TRACES
+    control: "A.14"
+    title: "No stack traces or internal details exposed to API clients"
+    policy: >
+      Error responses must use a fixed shape { code, message } with no
+      exception class names, file paths, or stack traces. Stack traces must
+      only appear in logs (non-production) or be fully suppressed (production).
+    fastapi:
+      - app/main.py
+    symfony:
+      - src/EventListener/ApiExceptionListener.php
+    laravel:
+      - app/Exceptions/Handler.php
+    nestjs:
+      - src/core/filters/all-exceptions.filter.ts
+    springboot:
+      - src/main/java/com/iso27001/api/core/filters/GlobalExceptionHandler.java
+    gin:
+      - internal/api/v1/helpers.go
+    phoenix:
+      - lib/iso27001_phoenix_web/controllers/v1/auth_controller.ex
+
+  # ── A.17 Business Continuity ────────────────────────────────────────────────
+
+  - id: A17-HEALTH-CHECKS
+    control: "A.17"
+    title: "Liveness, readiness, and detailed health checks"
+    policy: >
+      /health/live   — returns 200 if the process is alive (no dependencies checked).
+      /health/ready  — returns 200 only if DB and cache are reachable.
+      /health/detail — returns full component status; restricted to admin role.
+    fastapi:
+      - app/api/v1/health.py
+    symfony:
+      - src/Controller/Api/V1/HealthController.php
+    laravel:
+      - app/Http/Controllers/Api/V1/HealthController.php
+    nestjs:
+      - src/api/v1/health.controller.ts
+    springboot:
+      - src/main/java/com/iso27001/api/api/v1/HealthController.java
+    gin:
+      - internal/api/v1/health.go
+    phoenix:
+      - lib/iso27001_phoenix_web/controllers/v1/health_controller.ex
+
+  - id: A17-ERROR-BUDGET
+    control: "A.17"
+    title: "Error budget tracker (99.9% SLA, 5xx deducts budget)"
+    policy: >
+      Every response must be recorded in the error budget tracker.
+      5xx responses deduct from the rolling budget. The /health/detail
+      endpoint must include the current budget snapshot.
+      Must use Redis when available with in-process fallback.
+    fastapi:
+      - app/infrastructure/quality_score.py
+      - app/core/middleware.py
+    symfony:
+      - src/Infrastructure/Telemetry/ErrorBudgetTracker.php
+    laravel:
+      - app/Infrastructure/Telemetry/ErrorBudgetTracker.php
+    nestjs:
+      - src/infrastructure/telemetry/error-budget.tracker.ts
+      - src/core/middleware/telemetry.middleware.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/telemetry/ErrorBudgetTracker.java
+      - src/main/java/com/iso27001/api/core/middleware/TelemetryFilter.java
+    gin:
+      - internal/infrastructure/telemetry/error_budget.go
+      - internal/core/middleware/correlation_id.go
+    phoenix:
+      - lib/iso27001_phoenix/infrastructure/telemetry/error_budget.ex
+      - lib/iso27001_phoenix/core/middleware/correlation_id.ex
+
+  - id: A17-QUALITY-SCORE
+    control: "A.17"
+    title: "Quality score calculator (security 40% · integrity 20% · reliability 15% · auditability 15% · performance 10%)"
+    policy: >
+      A composite quality score must be computed from weighted sub-scores.
+      Weights must sum to 100%. Score must be exposed on /health/detail.
+    fastapi:
+      - app/infrastructure/quality_score.py
+    symfony:
+      - src/Infrastructure/Telemetry/QualityScoreCalculator.php
+    laravel:
+      - app/Infrastructure/Telemetry/QualityScoreCalculator.php
+    nestjs:
+      - src/infrastructure/telemetry/quality-score.calculator.ts
+    springboot:
+      - src/main/java/com/iso27001/api/infrastructure/telemetry/QualityScoreCalculator.java
+    gin:
+      - internal/infrastructure/telemetry/quality_score.go
+    phoenix:
+      - lib/iso27001_phoenix/infrastructure/telemetry/quality_score.ex
+  # ── Infrastructure (Terraform) ─────────────────────────────────────────────
+
+  - id: A9-IAM-LEAST-PRIVILEGE
+    control: "A.9"
+    title: "ECS task execution IAM role — least-privilege (read own secret + ECR + CloudWatch)"
+    policy: >
+      The ECS task execution IAM role must only grant: secretsmanager:GetSecretValue
+      on its own secret ARN, ECR pull permissions, and CloudWatch log write permissions.
+      The task role (application process) must have no AWS permissions by default.
+    infra:
+      - terraform/modules/ecs-service/main.tf
+
+  - id: A9-SECURITY-GROUPS
+    control: "A.9"
+    title: "VPC security groups enforce least-privilege network access"
+    policy: >
+      ECS tasks must only accept traffic from the ALB security group.
+      RDS must only accept connections from the ECS security group.
+      ElastiCache must only accept connections from the ECS security group.
+    infra:
+      - terraform/modules/vpc/main.tf
+
+  - id: A10-RDS-ENCRYPTION
+    control: "A.10"
+    title: "RDS storage encrypted at rest; master password in Secrets Manager"
+    policy: >
+      RDS instances must have storage_encrypted = true.
+      The master password must be auto-generated and stored in Secrets Manager —
+      never in tfvars files or Terraform outputs.
+    infra:
+      - terraform/modules/rds/main.tf
+
+  - id: A10-ELASTICACHE-ENCRYPTION
+    control: "A.10"
+    title: "ElastiCache encrypted at rest and in transit; auth token in Secrets Manager"
+    policy: >
+      ElastiCache replication groups must have at_rest_encryption_enabled = true
+      and transit_encryption_enabled = true. The auth token must be auto-generated
+      and stored in Secrets Manager.
+    infra:
+      - terraform/modules/elasticache/main.tf
+
+  - id: A10-SECRETS-MANAGER
+    control: "A.10"
+    title: "All application secrets stored in Secrets Manager; never in task definition environment vars"
+    policy: >
+      Application secrets (JWT_SECRET, ENCRYPTION_KEY, DATABASE_URL, REDIS_URL) must
+      be stored in Secrets Manager and injected into containers via the secrets: block
+      of the ECS task definition, not the environment: block.
+    infra:
+      - terraform/modules/secrets/main.tf
+      - terraform/modules/ecs-service/main.tf
+
+  - id: A12-CLOUDWATCH-RETENTION
+    control: "A.12"
+    title: "CloudWatch log groups with 365-day retention (one per stack)"
+    policy: >
+      Every ECS service must have a dedicated CloudWatch log group with
+      retention_in_days >= 365.
+    infra:
+      - terraform/modules/ecs-service/main.tf
+
+  - id: A14-ECR-SCAN-ON-PUSH
+    control: "A.14"
+    title: "ECR scan on push + immutable image tags"
+    policy: >
+      Every ECR repository must have scan_on_push = true and
+      image_tag_mutability = IMMUTABLE to prevent tag overwriting.
+    infra:
+      - terraform/modules/ecr/main.tf
+
+  - id: A17-RDS-BACKUPS
+    control: "A.17"
+    title: "RDS automated backups (7 days) and deletion protection"
+    policy: >
+      RDS instances must have backup_retention_period >= 7 and
+      deletion_protection = true (recommended for production).
+    infra:
+      - terraform/modules/rds/main.tf
+
+  - id: A17-ELASTICACHE-FAILOVER
+    control: "A.17"
+    title: "ElastiCache automatic failover when num_cache_clusters >= 2"
+    policy: >
+      ElastiCache replication groups must enable automatic_failover_enabled
+      when more than one cache cluster is configured.
+    infra:
+      - terraform/modules/elasticache/main.tf

@@ -1,0 +1,34 @@
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+
+# JWT keys — A.10: never commit private key material
+/config/jwt/private.pem
+/config/jwt/public.pem
+/config/jwt/*.pem
+
+# IDE
+/.idea/
+/.vscode/
+/.fleet/
+
+# Composer
+composer.lock
+
+# Logs & coverage
+*.log
+coverage/
+junit*.xml
+
+# Static analysis caches
+.phpstan.cache
+/phpstan-baseline.neon
+
+# PHPUnit
+/phpunit.xml
+/.phpunit.cache/
+.phpunit.result.cache

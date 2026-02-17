@@ -1,0 +1,78 @@
+# ── terraform.tfvars.example ──────────────────────────────────────────────────
+# Copy to terraform.tfvars and fill in real values before running `terraform apply`.
+# terraform.tfvars is gitignored — NEVER commit the real file.
+
+project     = "rest-blueprints"
+aws_region  = "us-east-1"
+environment = "staging"
+
+# Your domain (Route 53 or external DNS).
+# Each stack will be accessible at {stack}.{domain}.
+# Ensure your ACM certificate covers *.{domain}.
+domain          = "api.example.com"
+certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id"
+
+# Image tag to deploy (typically set by CI, e.g. the Git SHA)
+image_tag = "v1.0.0"
+
+# ── Per-stack secrets ─────────────────────────────────────────────────────────
+# Replace all placeholder values with real secrets.
+# ENCRYPTION_KEY must be exactly 32 bytes (use: openssl rand -hex 16).
+# DATABASE_URL includes the RDS endpoint (available after first `terraform apply`
+# of the RDS module — use a two-phase apply or data sources for bootstrapping).
+
+fastapi_secrets = {
+  JWT_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DATABASE_URL   = "postgresql://appuser:REPLACE@rds-endpoint:5432/fastapi_db"
+  REDIS_URL      = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/0"
+}
+
+nestjs_secrets = {
+  JWT_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DATABASE_URL   = "postgresql://appuser:REPLACE@rds-endpoint:5432/nestjs_db"
+  REDIS_URL      = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/1"
+}
+
+springboot_secrets = {
+  JWT_SECRET               = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY           = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DATABASE_URL             = "jdbc:postgresql://rds-endpoint:5432/springboot_db"
+  SPRING_DATASOURCE_URL    = "jdbc:postgresql://rds-endpoint:5432/springboot_db"
+  SPRING_DATASOURCE_USERNAME = "appuser"
+  SPRING_DATASOURCE_PASSWORD = "REPLACE"
+  REDIS_URL                = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/2"
+}
+
+gin_secrets = {
+  JWT_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DATABASE_URL   = "postgresql://appuser:REPLACE@rds-endpoint:5432/gin_db"
+  REDIS_URL      = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/3"
+}
+
+phoenix_secrets = {
+  JWT_SECRET      = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY  = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  SECRET_KEY_BASE = "REPLACE_WITH_64_CHAR_SECRET_FOR_PHOENIX_SESSIONS"
+  DATABASE_URL    = "postgresql://appuser:REPLACE@rds-endpoint:5432/phoenix_db"
+  REDIS_URL       = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/4"
+}
+
+symfony_secrets = {
+  APP_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  JWT_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DATABASE_URL   = "postgresql://appuser:REPLACE@rds-endpoint:5432/symfony_db?serverVersion=16"
+  REDIS_URL      = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/5"
+}
+
+laravel_secrets = {
+  APP_KEY        = "base64:REPLACE_WITH_BASE64_ENCODED_32_BYTE_KEY"
+  JWT_SECRET     = "REPLACE_WITH_RANDOM_32_CHAR_SECRET"
+  ENCRYPTION_KEY = "REPLACE_WITH_32_BYTE_KEY_00000000"
+  DB_PASSWORD    = "REPLACE"
+  DATABASE_URL   = "postgresql://appuser:REPLACE@rds-endpoint:5432/laravel_db"
+  REDIS_URL      = "rediss://:REPLACE_AUTH_TOKEN@elasticache-endpoint:6379/6"
+}
