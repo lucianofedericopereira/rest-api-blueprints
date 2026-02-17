@@ -2,7 +2,7 @@
     "name": "luciano/iso27001-laravel",
     "description": "ISO 27001 compliant REST API — Laravel 12 reference implementation",
     "type": "project",
-    "license": "proprietary",
+    "license": "Apache-2.0",
     "require": {
         "php": "^8.2",
         "ext-json": "*",

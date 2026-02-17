@@ -2,7 +2,7 @@
     "name": "luciano/iso27001-symfony",
     "description": "ISO 27001 compliant REST API — Symfony 6+ reference implementation",
     "type": "project",
-    "license": "proprietary",
+    "license": "Apache-2.0",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {

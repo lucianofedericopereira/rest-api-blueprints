@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/lucianofedericopereira/rest-api-blueprints/actions/workflows/ci.yml/badge.svg)
 ![ISO 27001](https://img.shields.io/badge/ISO%2027001-compliant-blue)
-![License](https://img.shields.io/badge/license-proprietary-lightgrey)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
 **Stacks**
 

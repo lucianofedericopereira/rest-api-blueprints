@@ -1,0 +1,10 @@
+ISO 27001 Compliant REST API Reference Implementation
+Copyright 2026 Luciano Federico Pereira
+
+Licensed under the Apache License, Version 2.0.
+See LICENSE for the full license text.
+
+This product includes software developed for educational and reference
+purposes demonstrating ISO 27001 security controls across seven technology
+stacks: FastAPI, Symfony, Laravel, NestJS, Spring Boot, Go/Gin, and
+Elixir/Phoenix.
