@@ -1,7 +1,7 @@
 # ADR 0004 — Structured Log Schema
 
 **Status:** Accepted
-**Date:** 2025-01-01
+**Date:** 2026-02-17
 **ISO 27001 Controls:** A.12 (Operations security — logging and monitoring), A.16 (Information security incident management)
 
 ---
@@ -102,3 +102,7 @@ All seven stacks emit **JSON-structured logs** with the following canonical fiel
   in each stack's infrastructure module should set `retention_in_days: 365` by default.
 - The `trace_id` field enables end-to-end request tracing when AWS X-Ray is active, satisfying
   A.16 incident reconstruction requirements without a dedicated distributed tracing backend.
+
+---
+
+← [ADR 0003 — Redis Fallback Pattern](0003-redis-fallback-pattern.md) · [ADR index](../../README.md#architecture-decision-records) · Next: [ADR 0005 — Cloud Infrastructure](0005-cloud-infrastructure.md) →

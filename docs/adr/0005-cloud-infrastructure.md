@@ -1,7 +1,7 @@
 # ADR 0005 — Cloud Infrastructure: AWS ECS Fargate + Terraform
 
 **Status:** Accepted
-**Date:** 2025-01-01
+**Date:** 2026-02-17
 **Deciders:** Project maintainers
 
 ---
@@ -159,3 +159,7 @@ reference implementation.
 | A.17 | `aws_db_instance.this` (`backup_retention_period = 7`, `deletion_protection = true`) | `modules/rds/main.tf` |
 | A.17 | `aws_elasticache_replication_group.this` (`automatic_failover_enabled`) | `modules/elasticache/main.tf` |
 | A.17 | `aws_ecs_service.app` (`deployment_minimum_healthy_percent = 50`) | `modules/ecs-service/main.tf` |
+
+---
+
+← [ADR 0004 — Structured Log Schema](0004-log-schema.md) · [ADR index](../../README.md#architecture-decision-records) · [Back to README](../../README.md) →

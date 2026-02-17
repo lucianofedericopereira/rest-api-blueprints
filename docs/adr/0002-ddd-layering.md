@@ -1,7 +1,7 @@
 # ADR 0002 — DDD Layered Architecture
 
 **Status:** Accepted
-**Date:** 2025-01-01
+**Date:** 2026-02-17
 **ISO 27001 Controls:** A.14 (System acquisition, development, and maintenance)
 
 ---
@@ -116,3 +116,7 @@ All seven enforcement tools run in CI (see `.github/workflows/ci.yml`) and as pr
 - Go and Elixir/Phoenix enforce layer boundaries at compile time via the module system — no
   additional tooling is required, and violations are caught before tests even run.
 - Violation of boundaries will fail CI, blocking merges — this is intentional.
+
+---
+
+← [ADR 0001 — JWT Authentication Strategy](0001-jwt-strategy.md) · [ADR index](../../README.md#architecture-decision-records) · Next: [ADR 0003 — Redis Fallback Pattern](0003-redis-fallback-pattern.md) →

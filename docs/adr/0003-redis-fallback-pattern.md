@@ -1,7 +1,7 @@
 # ADR 0003 — Redis Fallback Pattern
 
 **Status:** Accepted
-**Date:** 2025-01-01
+**Date:** 2026-02-17
 **ISO 27001 Controls:** A.12 (Operations security), A.17 (Information security aspects of business continuity)
 
 ---
@@ -76,3 +76,7 @@ We use a **Redis-primary, in-process-map fallback** pattern across all seven sta
   lock-free for concurrent reads.
 - Operators deploying to production must monitor Redis availability; the fallback is a safety
   net, not a primary mode of operation.
+
+---
+
+← [ADR 0002 — DDD Layered Architecture](0002-ddd-layering.md) · [ADR index](../../README.md#architecture-decision-records) · Next: [ADR 0004 — Structured Log Schema](0004-log-schema.md) →

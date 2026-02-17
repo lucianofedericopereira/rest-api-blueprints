@@ -1,7 +1,7 @@
 # ADR 0001 — JWT Authentication Strategy
 
 **Status:** Accepted
-**Date:** 2025-01-01
+**Date:** 2026-02-17
 **ISO 27001 Controls:** A.9 (Access control), A.10 (Cryptography)
 
 ---
@@ -65,3 +65,7 @@ We use **short-lived access tokens + long-lived refresh tokens** with the follow
 - Logout is client-side (token discard) due to stateless design; short access-token lifetime
   bounds the window of exposure for a stolen token.
 - Rotating refresh tokens reduces the blast radius of refresh token theft.
+
+---
+
+← [Back to README](../../README.md) · [ADR index](../../README.md#architecture-decision-records) · Next: [ADR 0002 — DDD Layered Architecture](0002-ddd-layering.md) →

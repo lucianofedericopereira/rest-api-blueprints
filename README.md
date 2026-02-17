@@ -1,10 +1,52 @@
 # ISO 27001 Compliant REST API Reference Implementation
 
+![CI](https://github.com/lucianofedericopereira/rest-api-blueprints/actions/workflows/ci.yml/badge.svg)
+![ISO 27001](https://img.shields.io/badge/ISO%2027001-compliant-blue)
+![License](https://img.shields.io/badge/license-proprietary-lightgrey)
+
+**Stacks**
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?logo=fastapi&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-7.3-000000?logo=symfony&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?logo=springboot&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.22-00ADD8?logo=go&logoColor=white)
+![Elixir](https://img.shields.io/badge/Elixir-1.16-4B275F?logo=elixir&logoColor=white)
+
+**Infrastructure & tooling**
+
+![Terraform](https://img.shields.io/badge/Terraform-1.8-7B42BC?logo=terraform&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-ECS%20Fargate-FF9900?logo=amazonaws&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-metrics-E6522C?logo=prometheus&logoColor=white)
+
 Seven reference implementations of a REST API demonstrating
 **ISO 27001** security controls with Domain-Driven Design, structured telemetry,
 and defensive security patterns across **PHP (Symfony 7.3 / Laravel 12)**,
 **Python (FastAPI 0.111+)**, **Node.js (NestJS 11 / TypeScript)**,
 **Java (Spring Boot 3.4 / Java 21)**, **Go (Gin)**, and **Elixir (Phoenix / OTP)**.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [CHANGELOG.md](CHANGELOG.md) | Full version history and release notes |
+| [CHECKLIST.md](CHECKLIST.md) | Telemetry & observability checklist |
+| [infra/terraform/README.md](infra/terraform/README.md) | Cloud infrastructure guide (AWS + Terraform) |
+| [docs/adr/0001-jwt-strategy.md](docs/adr/0001-jwt-strategy.md) | ADR: JWT Authentication Strategy |
+| [docs/adr/0002-ddd-layering.md](docs/adr/0002-ddd-layering.md) | ADR: DDD Layered Architecture |
+| [docs/adr/0003-redis-fallback-pattern.md](docs/adr/0003-redis-fallback-pattern.md) | ADR: Redis Fallback Pattern |
+| [docs/adr/0004-log-schema.md](docs/adr/0004-log-schema.md) | ADR: Structured Log Schema |
+| [docs/adr/0005-cloud-infrastructure.md](docs/adr/0005-cloud-infrastructure.md) | ADR: Cloud Infrastructure (AWS + Terraform) |
+
+---
 
 ## Project Structure
 
@@ -24,7 +66,7 @@ rules/               Cross-project ISO 27001 rule registry + validator
 
 ## CI Status — All Tests Passing
 
-All seven projects pass their full CI pipeline:
+All seven projects pass their full CI pipeline. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 | Project | Tests | Static Analysis | Layer Boundaries | Secret Scan |
 |---------|:-----:|:---------------:|:----------------:|:-----------:|

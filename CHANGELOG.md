@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-17
+
+### Fixed
+
+**Laravel — CI test runner**
+- `iso27001-laravel/phpunit.xml` renamed to `phpunit.xml.dist` — `php artisan test` (PHPUnit 11) resolves `phpunit.xml.dist` before `phpunit.xml`; without it CI was crashing with "Could not read XML" because Composer's Laravel skeleton was dropping an empty scaffold file under that name during `composer install`
+
+**Symfony — CI `composer install` crash**
+- Root `.gitignore`: changed `.env` → `/.env` — the broad pattern was preventing `iso27001-symfony/.env` from being tracked; the file is Symfony's committed non-secret defaults (analogous to `.env.example`) and must be present for `bootEnv()` to succeed
+- `.github/workflows/ci.yml`: added `APP_ENV: test` to the `composer install` step in the `symfony-tests` job — the `post-install-cmd` hook runs `cache:clear` via `symfony-cmd`, which boots the Symfony kernel; without `APP_ENV` set it defaulted to `dev`, tried to load `.env` + `.env.dev.local`, and crashed with `PathException` before the file was available
+
+**Secret scan (gitleaks)**
+- `iso27001-symfony/.env.dev`: replaced high-entropy hex `APP_SECRET=8d84ba2b7a4853da852c3a771b6ea0f1` with low-entropy placeholder `dev-only-change-me-in-env-local` — gitleaks `generic-api-key` rule triggers on entropy; the value was a committed dev placeholder with no production use
+
+### Changed
+
+**README**
+- Added badges section: CI status, ISO 27001, language/framework versions (Python, FastAPI, PHP, Symfony, Laravel, TypeScript, NestJS, Java, Spring Boot, Go, Elixir), infrastructure (Terraform, AWS, Docker, PostgreSQL, Redis, Prometheus)
+- Added Documentation table linking CHANGELOG, CHECKLIST, infra README, and all five ADRs
+- Added CHANGELOG link in CI Status section
+
 ### Added
 
 **Cloud Infrastructure layer — AWS + Terraform**
