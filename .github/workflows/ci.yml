@@ -1,0 +1,331 @@
+name: ISO 27001 CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+
+  secret-scan:
+    name: Secret scan (A.10 — gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rule-registry:
+    name: Rule registry check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - run: python3 rules/check_rules.py
+
+  openapi-lint:
+    name: OpenAPI specs — Spectral lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Spectral CLI
+        run: npm install -g @stoplight/spectral-cli
+      - name: Lint all OpenAPI specs
+        run: |
+          spectral lint \
+            iso27001-fastapi/openapi.yaml \
+            iso27001-symfony/openapi.yaml \
+            iso27001-laravel/openapi.yaml \
+            iso27001-nestjs/openapi.yaml \
+            iso27001-gin/openapi.yaml \
+            iso27001-phoenix/openapi.yaml \
+            --ruleset .spectral.yaml
+
+  symfony-tests:
+    name: Symfony (PHP 8.2)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-symfony
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, pdo, pdo_pgsql
+          coverage: none
+
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Generate JWT Keys
+        run: |
+          chmod +x jwt_setup.sh
+          ./jwt_setup.sh
+        env:
+          JWT_PASSPHRASE: ChangeMe
+
+      - name: Security Audit (A.14)
+        run: composer audit
+
+      - name: Static Analysis (A.14)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Layer boundaries (A.14 — deptrac)
+        run: vendor/bin/deptrac analyse
+
+      - name: Run Tests
+        run: php bin/phpunit
+        env:
+          APP_ENV: test
+          JWT_PASSPHRASE: ChangeMe
+
+  laravel-tests:
+    name: Laravel (PHP 8.2)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-laravel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, pdo, pdo_pgsql, pdo_sqlite
+          coverage: none
+
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Security Audit (A.14)
+        run: composer audit
+
+      - name: Static Analysis (A.14)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Layer boundaries (A.14 — deptrac)
+        run: vendor/bin/deptrac analyse
+
+      - name: Run Tests
+        run: php artisan test
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:test_key_only_not_for_production_=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab
+
+  fastapi-tests:
+    name: FastAPI (Python 3.11)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-fastapi
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pip install pip-audit
+
+      - name: Security Audit (A.14)
+        run: pip-audit
+
+      - name: Static Analysis (A.14)
+        run: mypy app
+
+      - name: Layer boundaries (A.14 — import-linter)
+        run: lint-imports
+
+      - name: Run Tests
+        run: pytest
+        env:
+          APP_ENV: test
+          JWT_SECRET_KEY: test-secret-key
+
+  springboot-tests:
+    name: Spring Boot (Java 21)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-springboot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build and run tests (includes ArchUnit layer check)
+        run: mvn verify -B
+        env:
+          APP_ENV: test
+          JWT_SECRET: test-secret-key-exactly-32-bytes!!
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab
+
+  nestjs-checks:
+    name: NestJS (Node.js 20)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-nestjs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Security Audit (A.14)
+        run: npm audit --audit-level=high
+
+      - name: Static Analysis — TypeScript strict (A.14)
+        run: npx tsc --noEmit
+
+      - name: Layer boundaries — DDD contracts (A.14)
+        run: npm run check:layers
+        env:
+          APP_ENV: test
+          APP_NAME: iso27001-nestjs
+          DATABASE_URL: postgresql://user:pass@localhost/test
+          JWT_SECRET: test-secret-only
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab
+
+      - name: Run Tests
+        run: npm test
+        env:
+          APP_ENV: test
+          APP_NAME: iso27001-nestjs
+          JWT_SECRET: test-secret-key
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab
+
+  gin-checks:
+    name: Go/Gin (Go 1.22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-gin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: false
+
+      - name: Download dependencies and generate go.sum
+        run: go mod tidy
+
+      - name: Vet — static analysis (A.14)
+        run: go vet ./...
+
+      - name: Build — verify compilation
+        run: go build ./...
+
+      - name: Run Tests
+        run: go test ./tests/... -v -race -count=1
+        env:
+          APP_ENV: test
+          APP_NAME: iso27001-gin
+          JWT_SECRET: test-secret-key-exactly-32-bytes!!
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab!
+
+
+  terraform-validate:
+    name: Terraform — fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.x"
+
+      - name: Terraform fmt check (A.14)
+        run: terraform fmt -check -recursive infra/terraform/
+
+      - name: Validate all modules (A.9 / A.10 / A.12 / A.14 / A.17)
+        run: |
+          for dir in infra/terraform/modules/*/; do
+            echo "→ validating $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+          done
+
+      - name: Validate staging environment
+        run: |
+          cd infra/terraform/environments/staging
+          terraform init -backend=false -input=false
+          terraform validate
+
+  phoenix-checks:
+    name: Elixir/Phoenix (Elixir 1.16 / OTP 26)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./iso27001-phoenix
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: iso27001_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.16"
+          otp-version: "26"
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile — warnings as errors (A.14)
+        run: mix compile --warnings-as-errors
+
+      - name: Run unit tests
+        run: mix test test/unit
+        env:
+          MIX_ENV: test
+          DATABASE_URL: ecto://user:pass@localhost/iso27001_test
+          JWT_SECRET: test-secret-key-exactly-32-bytes!
+          ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab!
