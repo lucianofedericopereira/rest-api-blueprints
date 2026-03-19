@@ -16,7 +16,7 @@
     "check:layers": "ts-node -r tsconfig-paths/register check-layers.ts"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.0",
+    "@nestjs/common": "^11.1.17",
     "@nestjs/core": "^11.0.0",
     "@nestjs/event-emitter": "^3.0.0",
     "@nestjs/jwt": "^11.0.0",
