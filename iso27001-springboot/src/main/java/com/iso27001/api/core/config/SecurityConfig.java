@@ -29,7 +29,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf
+                // Ignore CSRF for stateless API and actuator endpoints while keeping it enabled elsewhere
+                .ignoringRequestMatchers("/api/v1/**", "/actuator/**")
+            )
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
