@@ -1,5 +1,8 @@
 name: ISO 27001 CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "main", "master" ]
