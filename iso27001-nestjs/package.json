@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.1.17",
-    "@nestjs/core": "^11.0.0",
+    "@nestjs/core": "^11.1.23",
     "@nestjs/event-emitter": "^3.0.0",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.0",
-    "@nestjs/platform-express": "^11.1.17",
+    "@nestjs/platform-express": "^11.1.23",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.0.0",
     "@nestjs/typeorm": "^11.0.0",
