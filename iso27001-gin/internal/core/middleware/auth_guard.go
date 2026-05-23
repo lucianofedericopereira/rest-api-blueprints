@@ -21,7 +21,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			return
 		}
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
-		claims, err := auth.Verify(tokenStr, secret)
+		claims, err := auth.VerifyTyped(tokenStr, secret, auth.AccessTokenTyp)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{"code": "UNAUTHORIZED", "message": "Invalid or expired token"},

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `iso27001-fastapi/tests/unit/test_security.py`: added `TestTokenTypDiscrimination` covering pair issuance, both mismatch directions, and backward-compatible decoding when `expected_typ` is omitted
 - Operational note: tokens issued before this change lack the `typ` claim and will be rejected at `/refresh` and at any protected endpoint after deploy — users will need to re-authenticate once
 
+**Gin — JWT token-type discrimination (A.9.4 Secure log-on)**
+- `iso27001-gin/internal/core/auth/jwt.go`: `Claims` gains a `Typ` field; `IssueTokenPair` stamps `"access"` / `"refresh"`; new `VerifyTyped(token, secret, expectedTyp)` returns sentinel `ErrUnexpectedTokenTyp` on mismatch — `Verify` retains its unchecked signature for backward compatibility with existing call sites
+- `iso27001-gin/internal/api/v1/auth.go`: `/auth/refresh` now calls `auth.VerifyTyped(..., auth.RefreshTokenTyp)`
+- `iso27001-gin/internal/core/middleware/auth_guard.go`: `JWTAuth` now calls `auth.VerifyTyped(..., auth.AccessTokenTyp)` so refresh tokens cannot be presented as bearer credentials
+- `iso27001-gin/tests/unit/jwt_test.go`: added `TestTokenPair_TypClaims`, `TestVerifyTyped_RejectsAccessAtRefresh`, `TestVerifyTyped_RejectsRefreshAtAccess`, `TestVerifyTyped_AcceptsMatchingTyp`
+
 ## [1.5.0] - 2026-02-17
 
 ### Fixed

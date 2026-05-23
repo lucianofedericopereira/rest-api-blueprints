@@ -79,7 +79,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	claims, err := auth.Verify(req.RefreshToken, h.cfg.JWTSecret)
+	claims, err := auth.VerifyTyped(req.RefreshToken, h.cfg.JWTSecret, auth.RefreshTokenTyp)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, errorResp("UNAUTHORIZED", "Invalid or expired refresh token"))
 		return

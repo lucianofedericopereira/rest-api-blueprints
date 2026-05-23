@@ -38,8 +38,10 @@ defeating the short access-token lifetime. The check is performed inside
 the shared `decode_token(token, expected_typ=…)` helper so the rule applies
 uniformly across `get_current_user` (expects `"access"`) and the refresh
 endpoint (expects `"refresh"`); a mismatch raises `jwt.InvalidTokenError`
-and surfaces as HTTP 401. Implemented in FastAPI as of v1.6.0; tracked for
-the remaining six stacks.
+and surfaces as HTTP 401. Implemented in FastAPI and Gin as of v1.6.0
+(Gin exposes the check via `auth.VerifyTyped`, returning the sentinel
+`auth.ErrUnexpectedTokenTyp`); tracked for the remaining five stacks
+(Symfony, Laravel, NestJS, Spring Boot, Phoenix).
 
 **Key-management rules (A.10):**
 
