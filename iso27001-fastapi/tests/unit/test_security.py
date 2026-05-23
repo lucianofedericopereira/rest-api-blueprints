@@ -4,6 +4,8 @@ import pytest
 import jwt
 
 from app.config.security import (
+    ACCESS_TOKEN_TYP,
+    REFRESH_TOKEN_TYP,
     create_access_token,
     create_token_pair,
     decode_token,
@@ -63,3 +65,33 @@ class TestJWTTokens:
         assert access_payload["jti"] == access_jti
         assert refresh_payload["jti"] == refresh_jti
         assert access_payload["jti"] != refresh_payload["jti"]
+
+
+class TestTokenTypDiscrimination:
+    """A.9.4: access tokens must not be usable as refresh tokens, and vice versa."""
+
+    def test_token_pair_carries_distinct_typ_claims(self):
+        pair = create_token_pair("usr_t", "admin", str(uuid.uuid4()), str(uuid.uuid4()))
+        access_payload = jwt.decode(
+            pair.access_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+        refresh_payload = jwt.decode(
+            pair.refresh_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+        assert access_payload["typ"] == ACCESS_TOKEN_TYP
+        assert refresh_payload["typ"] == REFRESH_TOKEN_TYP
+
+    def test_access_token_rejected_when_refresh_expected(self):
+        pair = create_token_pair("usr_t", "admin", str(uuid.uuid4()), str(uuid.uuid4()))
+        with pytest.raises(jwt.InvalidTokenError):
+            decode_token(pair.access_token, expected_typ=REFRESH_TOKEN_TYP)
+
+    def test_refresh_token_rejected_when_access_expected(self):
+        pair = create_token_pair("usr_t", "admin", str(uuid.uuid4()), str(uuid.uuid4()))
+        with pytest.raises(jwt.InvalidTokenError):
+            decode_token(pair.refresh_token, expected_typ=ACCESS_TOKEN_TYP)
+
+    def test_decode_without_expected_typ_accepts_either(self):
+        pair = create_token_pair("usr_t", "admin", str(uuid.uuid4()), str(uuid.uuid4()))
+        assert decode_token(pair.access_token).typ == ACCESS_TOKEN_TYP
+        assert decode_token(pair.refresh_token).typ == REFRESH_TOKEN_TYP

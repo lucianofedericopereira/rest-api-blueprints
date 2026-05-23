@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.config.security import decode_token
+from app.config.security import decode_token, ACCESS_TOKEN_TYP
 from app.core.exceptions import AuthenticationError
 from app.domain.users.repository import UserRepository
 from app.domain.users.service import UserService
@@ -23,7 +23,7 @@ def get_current_user(
 ) -> User:
     """A.9: Authenticate user via JWT."""
     try:
-        payload = decode_token(token)
+        payload = decode_token(token, expected_typ=ACCESS_TOKEN_TYP)
     except Exception:
         raise AuthenticationError("Invalid token")
     

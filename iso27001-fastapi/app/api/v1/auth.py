@@ -6,7 +6,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.domain.users.repository import UserRepository
-from app.config.security import verify_password, create_token_pair, decode_token, TokenPair
+from app.config.security import (
+    verify_password,
+    create_token_pair,
+    decode_token,
+    TokenPair,
+    REFRESH_TOKEN_TYP,
+)
 from app.core.exceptions import AuthenticationError
 from app.core.telemetry import logger
 from app.core.brute_force import brute_force_guard
@@ -55,7 +61,7 @@ def refresh(
 ) -> TokenPair:
     """A.9: Exchange a valid refresh token for a new token pair."""
     try:
-        payload = decode_token(body.refresh_token)
+        payload = decode_token(body.refresh_token, expected_typ=REFRESH_TOKEN_TYP)
     except jwt.PyJWTError:
         raise AuthenticationError("Invalid or expired refresh token")
 

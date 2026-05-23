@@ -23,9 +23,23 @@ We use **short-lived access tokens + long-lived refresh tokens** with the follow
 |---|---|---|
 | Algorithm | RS256 (PHP stacks) / HS256 (Python/Node/Go/Elixir) | Same algorithm as access token |
 | Lifetime | 30 minutes | 7 days |
-| Payload | `sub` (user UUID), `role`, `jti`, `exp`, `iat` | `sub`, `jti`, `exp` |
+| Payload | `sub` (user UUID), `role`, `jti`, `exp`, `iat`, `typ="access"` | `sub`, `jti`, `exp`, `typ="refresh"` |
 | Storage guidance | Memory only (not localStorage) | HttpOnly cookie or secure storage |
 | Rotation | Issued as a pair on login and refresh | Rotated on every refresh |
+| Accepted at | Protected endpoints (`Authorization: Bearer …`) | `POST /auth/refresh` only |
+
+**Token-type discrimination (A.9.4 Secure log-on):**
+
+Access and refresh tokens carry an explicit `typ` claim and each endpoint
+enforces the expected value. Without this discrimination, the two token
+shapes are interchangeable at the protocol layer — a stolen access token
+could be presented at `/auth/refresh` to obtain a fresh 7-day refresh token,
+defeating the short access-token lifetime. The check is performed inside
+the shared `decode_token(token, expected_typ=…)` helper so the rule applies
+uniformly across `get_current_user` (expects `"access"`) and the refresh
+endpoint (expects `"refresh"`); a mismatch raises `jwt.InvalidTokenError`
+and surfaces as HTTP 401. Implemented in FastAPI as of v1.6.0; tracked for
+the remaining six stacks.
 
 **Key-management rules (A.10):**
 

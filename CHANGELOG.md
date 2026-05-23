@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+**FastAPI — JWT token-type discrimination (A.9.4 Secure log-on)**
+- `iso27001-fastapi/app/config/security.py`: tokens now carry an explicit `typ` claim (`"access"` or `"refresh"`); `decode_token()` accepts an `expected_typ` argument and raises `jwt.InvalidTokenError` on mismatch
+- `iso27001-fastapi/app/api/v1/auth.py`: `/auth/refresh` now requires `typ == "refresh"` — an access token presented at this endpoint is rejected, closing a session-extension path where a stolen short-lived access token could otherwise be exchanged for a fresh 7-day refresh token
+- `iso27001-fastapi/app/api/deps.py`: bearer authentication via `get_current_user` now requires `typ == "access"` — refresh tokens are no longer accepted as API credentials
+- `iso27001-fastapi/tests/unit/test_security.py`: added `TestTokenTypDiscrimination` covering pair issuance, both mismatch directions, and backward-compatible decoding when `expected_typ` is omitted
+- Operational note: tokens issued before this change lack the `typ` claim and will be rejected at `/refresh` and at any protected endpoint after deploy — users will need to re-authenticate once
+
 ## [1.5.0] - 2026-02-17
 
 ### Fixed
