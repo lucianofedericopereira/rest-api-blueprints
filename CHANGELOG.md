@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `iso27001-gin/internal/core/middleware/auth_guard.go`: `JWTAuth` now calls `auth.VerifyTyped(..., auth.AccessTokenTyp)` so refresh tokens cannot be presented as bearer credentials
 - `iso27001-gin/tests/unit/jwt_test.go`: added `TestTokenPair_TypClaims`, `TestVerifyTyped_RejectsAccessAtRefresh`, `TestVerifyTyped_RejectsRefreshAtAccess`, `TestVerifyTyped_AcceptsMatchingTyp`
 
+**Cross-stack JWT typ-discrimination audit (A.9.4)**
+- Surveyed all 7 stacks for access/refresh token-type discrimination. NestJS (`src/core/auth/jwt.strategy.ts`, `src/api/v1/auth.controller.ts`), Spring Boot (`core/auth/JwtAuthFilter.java`, `api/v1/AuthController.java`), and Phoenix (`lib/iso27001_phoenix/core/auth/guardian.ex` via Guardian's native `typ` check) were already enforcing the rule and required no code change. Symfony uses a single-token design (the access token is itself rotated at `/refresh`) and Laravel uses Sanctum opaque PATs — neither has an access/refresh pair to confuse. See ADR-0001 for the per-stack status table
+
 ## [1.5.0] - 2026-02-17
 
 ### Fixed

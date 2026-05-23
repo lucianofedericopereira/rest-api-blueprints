@@ -38,10 +38,19 @@ defeating the short access-token lifetime. The check is performed inside
 the shared `decode_token(token, expected_typ=…)` helper so the rule applies
 uniformly across `get_current_user` (expects `"access"`) and the refresh
 endpoint (expects `"refresh"`); a mismatch raises `jwt.InvalidTokenError`
-and surfaces as HTTP 401. Implemented in FastAPI and Gin as of v1.6.0
-(Gin exposes the check via `auth.VerifyTyped`, returning the sentinel
-`auth.ErrUnexpectedTokenTyp`); tracked for the remaining five stacks
-(Symfony, Laravel, NestJS, Spring Boot, Phoenix).
+and surfaces as HTTP 401.
+
+Per-stack status:
+
+| Stack | Enforcement | Reference |
+|---|---|---|
+| FastAPI | `typ` claim + `decode_token(token, expected_typ=…)` | `app/config/security.py`, `app/api/deps.py`, `app/api/v1/auth.py` |
+| NestJS | `type` claim + Passport strategy + refresh controller | `src/core/auth/jwt.strategy.ts`, `src/api/v1/auth.controller.ts` |
+| Spring Boot | `type` claim + `JwtAuthFilter` + `AuthController` | `core/auth/JwtAuthFilter.java`, `api/v1/AuthController.java` |
+| Gin | `Typ` claim + `auth.VerifyTyped` / `auth.ErrUnexpectedTokenTyp` | `internal/core/auth/jwt.go`, `internal/core/middleware/auth_guard.go`, `internal/api/v1/auth.go` |
+| Phoenix | `typ` claim enforced natively by Guardian | `lib/iso27001_phoenix/core/auth/guardian.ex` |
+| Symfony | N/A — single-token design (the access token *is* the refresh credential) | `src/Controller/Api/V1/AuthController.php` |
+| Laravel | N/A — Sanctum opaque PATs, not JWT; tokens revoked server-side | `app/Http/Controllers/Api/V1/AuthController.php` |
 
 **Key-management rules (A.10):**
 
