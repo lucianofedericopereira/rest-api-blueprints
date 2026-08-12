@@ -2,7 +2,7 @@
 # A.10: non-root user; A.14: minimal attack surface.
 
 # ── Build stage ──────────────────────────────────────────────────────────────
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 

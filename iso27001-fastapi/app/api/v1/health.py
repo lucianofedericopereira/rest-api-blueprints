@@ -10,6 +10,7 @@ from app.domain.users.models import User
 from app.core.metrics import SLO_P95_LATENCY_MS, SLO_P99_LATENCY_MS
 from app.infrastructure.error_budget import error_budget
 from app.infrastructure.quality_score import QualityScoreCalculator
+from app.core.telemetry import logger
 
 router = APIRouter()
 
@@ -33,7 +34,10 @@ def readiness(db: Session = Depends(get_db)) -> JSONResponse:
         latency_ms = round((time.monotonic() - t0) * 1000, 2)
         checks["database"] = {"status": "ok", "latency_ms": latency_ms}
     except Exception as exc:
-        checks["database"] = {"status": "error", "detail": str(exc)}
+        # A.12: never surface raw exception text to callers of an unauthenticated
+        # endpoint — log the detail server-side and return a generic status only.
+        logger.error("health.database_check_failed", error=str(exc))
+        checks["database"] = {"status": "error"}
         overall = False
 
     status_code = status.HTTP_200_OK if overall else status.HTTP_503_SERVICE_UNAVAILABLE

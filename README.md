@@ -15,7 +15,7 @@
 ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?logo=springboot&logoColor=white)
-![Go](https://img.shields.io/badge/Go-1.22-00ADD8?logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
 ![Elixir](https://img.shields.io/badge/Elixir-1.16-4B275F?logo=elixir&logoColor=white)
 
 **Infrastructure & tooling**
@@ -56,7 +56,7 @@ iso27001-symfony/    Symfony 7.3 (PHP 8.2)
 iso27001-laravel/    Laravel 12 (PHP 8.2)
 iso27001-nestjs/     NestJS 11 (Node.js / TypeScript)
 iso27001-springboot/ Spring Boot 3.4 (Java 21)
-iso27001-gin/        Go 1.22 / Gin
+iso27001-gin/        Go 1.25 / Gin
 iso27001-phoenix/    Elixir 1.16 / Phoenix (OTP 26)
 rules/               Cross-project ISO 27001 rule registry + validator
 .pre-commit-config.yaml   Root-level pre-commit hooks (secret scan, lint, format)
@@ -236,7 +236,7 @@ A `Makefile` unifies commands for all seven stacks.
 - Python 3.11+ & pip
 - Node.js 20+ & npm
 - Java 21+ & Maven 3.9+
-- Go 1.22+
+- Go 1.25+
 - Elixir 1.16+ & OTP 26+
 
 ### Commands

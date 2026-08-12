@@ -233,7 +233,7 @@ jobs:
           ENCRYPTION_KEY: test-only-key-exactly-32bytes-ab
 
   gin-checks:
-    name: Go/Gin (Go 1.22)
+    name: Go/Gin (Go 1.25)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -244,7 +244,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.25"
           cache: false
 
       - name: Download dependencies and generate go.sum
