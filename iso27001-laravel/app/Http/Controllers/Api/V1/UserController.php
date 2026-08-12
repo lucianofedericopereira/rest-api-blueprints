@@ -43,7 +43,11 @@ final class UserController extends Controller
     /** POST /api/v1/users — create user */
     public function store(CreateUserRequest $request): JsonResponse
     {
-        $dto = CreateUserDTO::fromArray($request->validated());
+        $dto = CreateUserDTO::fromArray([
+            'email'    => $request->string('email')->toString(),
+            'password' => $request->string('password')->toString(),
+            'role'     => $request->string('role')->toString(),
+        ]);
 
         $user = $this->userService->createUser(
             $dto,
@@ -72,7 +76,11 @@ final class UserController extends Controller
     /** PUT /api/v1/users/{id} — full replacement */
     public function update(UpdateUserRequest $request, string $id): JsonResponse
     {
-        $dto  = UpdateUserDTO::fromArray($request->validated());
+        $dto  = UpdateUserDTO::fromArray([
+            'email'    => $request->has('email')    ? $request->string('email')->toString()    : null,
+            'password' => $request->has('password') ? $request->string('password')->toString() : null,
+            'role'     => $request->has('role')     ? $request->string('role')->toString()     : null,
+        ]);
         $user = $this->userService->updateUser(
             $id,
             $dto,

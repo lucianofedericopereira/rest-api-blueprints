@@ -4,7 +4,7 @@ includes:
 
 parameters:
     # A.14: Maximum static analysis level
-    level: 8
+    level: max
     paths:
         - src
     excludePaths:

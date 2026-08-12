@@ -12,6 +12,9 @@ final readonly class UpdateUserDTO
         public ?string $role = null,
     ) {}
 
+    /**
+     * @param array{email?: string|null, password?: string|null, role?: string|null} $data validated request input
+     */
     public static function fromArray(array $data): self
     {
         return new self(

@@ -31,9 +31,9 @@ final class CloudWatchEmitter
 
     public function __construct()
     {
-        $this->namespace   = (string) config('services.aws.cloudwatch_namespace', 'ISO27001/API');
-        $this->service     = (string) config('app.name', 'iso27001-api');
-        $this->environment = (string) config('app.env', 'production');
+        $this->namespace   = config()->string('services.aws.cloudwatch_namespace', 'ISO27001/API');
+        $this->service     = config()->string('app.name', 'iso27001-api');
+        $this->environment = config()->string('app.env', 'production');
         $this->client      = $this->buildClient();
     }
 
@@ -112,7 +112,7 @@ final class CloudWatchEmitter
             return null;
         }
 
-        $region      = (string) config('services.aws.region', 'eu-west-1');
+        $region      = config()->string('services.aws.region', 'eu-west-1');
         $clientClass = 'Aws\CloudWatch\CloudWatchClient';
 
         try {

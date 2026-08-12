@@ -35,7 +35,8 @@ final class QualityScoreCalculator
      */
     public function calculate(array $errorBudgetSnapshot): array
     {
-        $availability  = (float) ($errorBudgetSnapshot['observed_availability'] ?? 1.0);
+        $rawAvailability = $errorBudgetSnapshot['observed_availability'] ?? 1.0;
+        $availability    = is_numeric($rawAvailability) ? (float) $rawAvailability : 1.0;
         $security      = 1.0; // placeholder: wire JWT/RBAC check pass-rate here
         $dataIntegrity = 1.0; // placeholder: wire audit event completeness here
         $reliability   = max(0.0, min(1.0, $availability));

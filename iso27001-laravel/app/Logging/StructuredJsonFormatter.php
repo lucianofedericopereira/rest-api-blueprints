@@ -52,7 +52,7 @@ final class StructuredJsonFormatter extends JsonFormatter
     /**
      * Merge Monolog context + extra (minus fields already promoted to top-level).
      *
-     * @return array<string, mixed>|null
+     * @return array<array-key, mixed>|null
      */
     private function mergeContext(LogRecord $record): ?array
     {

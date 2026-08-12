@@ -45,13 +45,16 @@ final class Handler extends ExceptionHandler
         $requestId = $request->header('X-Request-ID', 'unknown');
 
         if ($e instanceof ValidationException) {
-            $details = collect($e->errors())
-                ->flatMap(fn ($messages, $field) => array_map(
-                    fn ($msg) => ['field' => $field, 'message' => $msg, 'code' => 'VALIDATION_FAILED'],
-                    $messages,
-                ))
-                ->values()
-                ->all();
+            $details = [];
+            foreach ($e->errors() as $field => $messages) {
+                foreach ((is_array($messages) ? $messages : [$messages]) as $msg) {
+                    $details[] = [
+                        'field'   => (string) $field,
+                        'message' => $msg,
+                        'code'    => 'VALIDATION_FAILED',
+                    ];
+                }
+            }
 
             return response()->json([
                 'error' => [

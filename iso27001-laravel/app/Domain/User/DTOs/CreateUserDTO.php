@@ -16,6 +16,9 @@ final readonly class CreateUserDTO
         public string $role = 'viewer',
     ) {}
 
+    /**
+     * @param array{email: string, password: string, role?: string} $data validated request input
+     */
     public static function fromArray(array $data): self
     {
         return new self(

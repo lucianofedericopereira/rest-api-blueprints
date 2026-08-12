@@ -117,7 +117,8 @@ final class CloudWatchEmitter
             return null;
         }
 
-        $region = (string) ($_SERVER['AWS_DEFAULT_REGION'] ?? 'eu-west-1');
+        $rawRegion = $_SERVER['AWS_DEFAULT_REGION'] ?? 'eu-west-1';
+        $region    = is_string($rawRegion) ? $rawRegion : 'eu-west-1';
 
         try {
             return new $fqcn(['region' => $region, 'version' => 'latest']);

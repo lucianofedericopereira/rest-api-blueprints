@@ -49,8 +49,9 @@ final class TelemetrySubscriber implements EventSubscriberInterface
         $this->errorBudget->record($statusCode);
 
         // CloudWatch custom metrics (no-op when SDK / credentials absent)
-        $startTime = $request->server->get('REQUEST_TIME_FLOAT', microtime(true));
-        $durationMs = round((microtime(true) - (float) $startTime) * 1000, 2);
+        $startTime  = $request->server->get('REQUEST_TIME_FLOAT', microtime(true));
+        $startTime  = is_numeric($startTime) ? (float) $startTime : microtime(true);
+        $durationMs = round((microtime(true) - $startTime) * 1000, 2);
 
         $this->cloudWatch->emitRequest(
             method:     $request->getMethod(),

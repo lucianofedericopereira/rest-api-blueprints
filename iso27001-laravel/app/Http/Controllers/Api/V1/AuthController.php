@@ -28,7 +28,7 @@ final class AuthController extends Controller
     /** POST /api/v1/auth/login */
     public function login(LoginRequest $request): JsonResponse
     {
-        $email = (string) $request->input('email');
+        $email = $request->string('email')->toString();
 
         // A.9: Fail-fast if account is locked out
         if ($this->bruteForce->isLocked($email)) {
@@ -67,13 +67,13 @@ final class AuthController extends Controller
         $token = $user->createToken(
             name:      'api-access',
             abilities: [$user->role],
-            expiresAt: now()->addMinutes(config('sanctum.expiration', 30)),
+            expiresAt: now()->addMinutes(config()->integer('sanctum.expiration', 30)),
         );
 
         return response()->json([
             'access_token' => $token->plainTextToken,
             'token_type'   => 'Bearer',
-            'expires_in'   => config('sanctum.expiration', 30) * 60, // seconds
+            'expires_in'   => config()->integer('sanctum.expiration', 30) * 60, // seconds
             'role'         => $user->role,
         ]);
     }
@@ -97,13 +97,13 @@ final class AuthController extends Controller
         $token = $user->createToken(
             name:      'api-access',
             abilities: [$user->role],
-            expiresAt: now()->addMinutes(config('sanctum.expiration', 30)),
+            expiresAt: now()->addMinutes(config()->integer('sanctum.expiration', 30)),
         );
 
         return response()->json([
             'access_token' => $token->plainTextToken,
             'token_type'   => 'Bearer',
-            'expires_in'   => config('sanctum.expiration', 30) * 60,
+            'expires_in'   => config()->integer('sanctum.expiration', 30) * 60,
             'role'         => $user->role,
         ]);
     }

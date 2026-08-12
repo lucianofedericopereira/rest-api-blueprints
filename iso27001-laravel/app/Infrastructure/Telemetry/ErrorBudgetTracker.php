@@ -132,9 +132,11 @@ final class ErrorBudgetTracker
     {
         if ($this->redisAvailable) {
             try {
-                $conn   = Redis::connection();
-                $total  = (int) ($conn->get(sprintf(self::KEY_TOTAL, $this->keyPrefix)) ?? 0);
-                $failed = (int) ($conn->get(sprintf(self::KEY_FAILED, $this->keyPrefix)) ?? 0);
+                $conn      = Redis::connection();
+                $totalRaw  = $conn->get(sprintf(self::KEY_TOTAL, $this->keyPrefix));
+                $failedRaw = $conn->get(sprintf(self::KEY_FAILED, $this->keyPrefix));
+                $total     = is_numeric($totalRaw) ? (int) $totalRaw : 0;
+                $failed    = is_numeric($failedRaw) ? (int) $failedRaw : 0;
                 return [$total, $failed, 'redis'];
             } catch (\Throwable) {
                 // Fall through to in-process

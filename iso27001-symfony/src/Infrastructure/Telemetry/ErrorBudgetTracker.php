@@ -129,8 +129,10 @@ final class ErrorBudgetTracker
     {
         if ($this->redis !== null) {
             try {
-                $total  = (int) ($this->redis->get(sprintf(self::KEY_TOTAL, $this->keyPrefix)) ?: 0);
-                $failed = (int) ($this->redis->get(sprintf(self::KEY_FAILED, $this->keyPrefix)) ?: 0);
+                $totalRaw  = $this->redis->get(sprintf(self::KEY_TOTAL, $this->keyPrefix));
+                $failedRaw = $this->redis->get(sprintf(self::KEY_FAILED, $this->keyPrefix));
+                $total     = is_numeric($totalRaw) ? (int) $totalRaw : 0;
+                $failed    = is_numeric($failedRaw) ? (int) $failedRaw : 0;
                 return [$total, $failed, 'redis'];
             } catch (\Throwable) {
                 // Fall through to in-process
@@ -151,7 +153,8 @@ final class ErrorBudgetTracker
             return null;
         }
 
-        $url = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
+        $envUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
+        $url    = is_string($envUrl) ? $envUrl : null;
         if ($url === null) {
             return null;
         }

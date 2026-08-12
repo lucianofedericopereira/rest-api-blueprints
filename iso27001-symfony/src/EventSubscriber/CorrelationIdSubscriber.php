@@ -55,11 +55,11 @@ final class CorrelationIdSubscriber implements EventSubscriberInterface
         $requestId  = $request->attributes->get('request_id');
         $response   = $event->getResponse();
 
-        $response->headers->set(self::HEADER, $requestId);
+        $response->headers->set(self::HEADER, is_string($requestId) ? $requestId : 'unknown');
 
         // Propagate X-Ray trace header downstream
         $traceId = $request->attributes->get('xray_trace_id');
-        if ($traceId !== null) {
+        if (is_string($traceId)) {
             $response->headers->set(self::XRAY_HEADER, $traceId);
             $this->endSegment();
         }

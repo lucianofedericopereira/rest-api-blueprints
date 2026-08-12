@@ -70,12 +70,18 @@ final class BruteForceGuard
     {
         if (($r = $this->redis()) !== null) {
             $val = $r->get($key);
-            return $val !== false ? (string) $val : null;
+            if ($val === false) {
+                return null;
+            }
+            return is_scalar($val) ? (string) $val : null;
         }
         if (function_exists('apcu_fetch')) {
             $success = false;
             $val     = apcu_fetch($key, $success);
-            return $success ? (string) $val : null;
+            if (!$success) {
+                return null;
+            }
+            return is_scalar($val) ? (string) $val : null;
         }
         return isset($this->local[$key]) ? (string) $this->local[$key] : null;
     }
@@ -111,7 +117,8 @@ final class BruteForceGuard
         if (!extension_loaded('redis')) {
             return null;
         }
-        $url = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
+        $envUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: null;
+        $url    = is_string($envUrl) ? $envUrl : null;
         if ($url === null) {
             return null;
         }

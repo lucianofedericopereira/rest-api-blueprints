@@ -29,6 +29,8 @@ final readonly class AuditService implements AuditServiceInterface
     ): void {
         $request = $this->requestStack->getCurrentRequest();
 
+        $correlationId = $request?->attributes->get('request_id', 'system');
+
         $entry = new AuditEntry(
             action: $action,
             performedBy: $performedBy,
@@ -36,7 +38,7 @@ final readonly class AuditService implements AuditServiceInterface
             resourceId: $resourceId,
             changes: $changes,
             ipAddress: $request?->getClientIp(),
-            correlationId: $request?->attributes->get('request_id', 'system'),
+            correlationId: is_string($correlationId) ? $correlationId : 'system',
         );
 
         $this->repository->append($entry);

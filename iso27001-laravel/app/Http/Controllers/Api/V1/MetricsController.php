@@ -40,7 +40,11 @@ final class MetricsController extends Controller
             /** @phpstan-ignore-next-line */
             $output = $renderer->render($registry->getMetricFamilySamples());
             $mime   = constant($rendererClass . '::MIME_TYPE');
-            return response((string) $output, Response::HTTP_OK, ['Content-Type' => (string) $mime]);
+            return response(
+                is_string($output) ? $output : '',
+                Response::HTTP_OK,
+                ['Content-Type' => is_string($mime) ? $mime : 'text/plain'],
+            );
         }
 
         // Graceful stub — tells scrapers the endpoint exists but SDK is absent

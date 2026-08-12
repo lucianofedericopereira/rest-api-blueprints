@@ -32,7 +32,7 @@ final class BruteForceGuard
             $lockedUntil = \Illuminate\Support\Facades\Cache::get(
                 self::KEY_PREFIX . $identifier . ':locked_until'
             );
-            return $lockedUntil !== null && (float) $lockedUntil > microtime(true);
+            return is_numeric($lockedUntil) && (float) $lockedUntil > microtime(true);
         } catch (\Throwable) {
             return false;
         }
@@ -45,7 +45,8 @@ final class BruteForceGuard
             $keyLocked = self::KEY_PREFIX . $identifier . ':locked_until';
             $ttl       = self::LOCKOUT_TTL;
 
-            $count = (int) (\Illuminate\Support\Facades\Cache::get($keyCount) ?? 0) + 1;
+            $cached = \Illuminate\Support\Facades\Cache::get($keyCount);
+            $count  = (is_numeric($cached) ? (int) $cached : 0) + 1;
             \Illuminate\Support\Facades\Cache::put($keyCount, $count, $ttl);
 
             if ($count >= self::MAX_ATTEMPTS) {

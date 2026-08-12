@@ -23,22 +23,26 @@ final class UserRepository extends ServiceEntityRepository implements UserReposi
 
     public function findById(string $id): ?User
     {
-        return $this->createQueryBuilder('u')
+        $result = $this->createQueryBuilder('u')
             ->where('u.id = :id')
             ->andWhere('u.deletedAt IS NULL')
             ->setParameter('id', $id)
             ->getQuery()
             ->getOneOrNullResult();
+
+        return $result instanceof User ? $result : null;
     }
 
     public function findByEmail(string $email): ?User
     {
-        return $this->createQueryBuilder('u')
+        $result = $this->createQueryBuilder('u')
             ->where('u.email = :email')
             ->andWhere('u.deletedAt IS NULL')
             ->setParameter('email', $email)
             ->getQuery()
             ->getOneOrNullResult();
+
+        return $result instanceof User ? $result : null;
     }
 
     public function findPaginated(int $page, int $perPage): array
@@ -60,7 +64,14 @@ final class UserRepository extends ServiceEntityRepository implements UserReposi
             ->getQuery()
             ->getResult();
 
-        return ['items' => $items, 'total' => (int) $total];
+        $users = is_array($items)
+            ? array_values(array_filter(
+                $items,
+                static fn (mixed $item): bool => $item instanceof User,
+            ))
+            : [];
+
+        return ['items' => $users, 'total' => (int) $total];
     }
 
     public function save(User $user): void

@@ -30,8 +30,8 @@ final class StructuredLogProcessor implements ProcessorInterface
     }
 
     /**
-     * @param  array<string, mixed> $data
-     * @return array<string, mixed>
+     * @param  array<array-key, mixed> $data
+     * @return array<array-key, mixed>
      */
     private function redact(array $data): array
     {
